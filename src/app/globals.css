@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* Tambahkan baris ini tepat di bawah @import untuk menjinakkan Tailwind v4 */
+@variant dark ([data-theme="dark"] &);
+
+:root {
+  --background: #f3f6fb;
+  --foreground: #0f172a;
+  --muted: #64748b;
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --border: rgba(148, 163, 184, 0.28);
+  --accent: #0f766e;
+  --accent-foreground: #f8fafc;
+  --ring: rgba(15, 118, 110, 0.35);
+  --shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 12px 40px rgba(15, 23, 42, 0.06);
+  --glass: rgba(255, 255, 255, 0.42);
+}
+
+[data-theme="dark"] {
+  --background: #07111f;
+  --foreground: #e2e8f0;
+  --muted: #94a3b8;
+  --surface: rgba(15, 23, 42, 0.68);
+  --surface-strong: rgba(15, 23, 42, 0.9);
+  --border: rgba(148, 163, 184, 0.18);
+  --accent: #14b8a6;
+  --accent-foreground: #042f2e;
+  --ring: rgba(20, 184, 166, 0.35);
+  --shadow: 0 24px 80px rgba(2, 6, 23, 0.35);
+  --shadow-soft: 0 12px 40px rgba(2, 6, 23, 0.18);
+  --glass: rgba(2, 6, 23, 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-space-grotesk);
+}
+
+html {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(20, 184, 166, 0.12),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(59, 130, 246, 0.1),
+      transparent 20%
+    ),
+    linear-gradient(180deg, var(--background), var(--background));
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+@keyframes modal-overlay-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-overlay-enter {
+  animation: modal-overlay-enter 180ms ease-out;
+}
+
+.modal-sheet-enter {
+  animation: modal-sheet-enter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+::selection {
+  background: rgba(20, 184, 166, 0.24);
+  color: var(--foreground);
+}
+
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(24px);
+}
+
+.glass-card-strong {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(28px);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.border-subtle {
+  border-color: var(--border);
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
