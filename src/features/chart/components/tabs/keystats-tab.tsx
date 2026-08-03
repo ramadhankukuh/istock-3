@@ -169,7 +169,7 @@ export function KeystatsTab({ data }: { data: ChartData }) {
                   width={56}
                 />
                 <Tooltip
-                  formatter={(value: number) => formatCompactNumber(value)}
+                  formatter={(value) => formatCompactNumber(Number(value))}
                   contentStyle={{
                     borderRadius: 16,
                     border: "1px solid rgba(148, 163, 184, 0.28)",
