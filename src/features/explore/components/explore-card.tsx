@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExploreMiniSparkline } from "@/features/explore/components/mini-sparkline";
+import { ExploreMiniSparkline } from "@/features/explore/components/explore-mini-sparkline";
 import { cn } from "@/lib/utils/cn";
 import type { ExploreCategory } from "@/features/explore/types";
 

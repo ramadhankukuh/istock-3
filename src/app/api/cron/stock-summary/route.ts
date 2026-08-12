@@ -9,6 +9,7 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = process.env.CRON_SECRET;
 
+  // Fail-closed: tanpa CRON_SECRET valid selalu 401.
   if (!token || authHeader !== `Bearer ${token}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to update stock summary";
-
+    console.error("❌ Stock summary update failed:", error);
     return NextResponse.json(
       {
         success: false,

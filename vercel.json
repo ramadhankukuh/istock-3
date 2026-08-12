@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/swing-screener",
+      "schedule": "0 10 * * 1-5"
+    },
+    {
+      "path": "/api/cron/konglo",
+      "schedule": "0 10 * * 1-5"
+    },
+    {
+      "path": "/api/cron/ipo-performance",
+      "schedule": "0 13 * * 1-5"
+    },
+    {
+      "path": "/api/cron/stock-summary",
+      "schedule": "15 10 * * 1-5"
+    },
+    {
+      "path": "/api/cron/index-summary",
+      "schedule": "15 10 * * 1-5"
+    },
+    {
+      "path": "/api/cron/net-foreign",
+      "schedule": "15 10 * * 1-5"
+    }
+  ]
+}

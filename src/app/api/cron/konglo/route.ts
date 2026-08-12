@@ -7,6 +7,7 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = process.env.CRON_SECRET;
 
+  // Fail-closed: tanpa CRON_SECRET valid selalu 401.
   if (!token || authHeader !== `Bearer ${token}`) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    console.log("⏰ Cron triggered: /api/konglo/update");
+    console.log("⏰ Cron triggered: /api/cron/konglo");
 
     await fetchAndCacheKonglo();
 
@@ -25,10 +26,12 @@ export async function GET(req: Request) {
       redisKey: "kongloData",
       timestamp: new Date().toISOString(),
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Failed to update Konglo data";
     console.error("❌ Konglo update failed:", err);
     return NextResponse.json(
-      { error: err.message },
+      { error: message },
       { status: 500 },
     );
   }

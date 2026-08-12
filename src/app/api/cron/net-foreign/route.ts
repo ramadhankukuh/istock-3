@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = process.env.CRON_SECRET;
 
+  // Fail-closed: tanpa CRON_SECRET valid selalu 401.
   if (!token || authHeader !== `Bearer ${token}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
       error instanceof Error
         ? error.message
         : "Failed to update net foreign cache";
-
+    console.error("❌ Net foreign update failed:", error);
     return NextResponse.json(
       {
         success: false,

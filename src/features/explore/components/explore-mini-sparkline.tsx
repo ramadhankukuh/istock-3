@@ -37,7 +37,7 @@ function buildPath(points: number[]) {
   return { line, area, lastX: last.x, lastY: last.y };
 }
 
-function MiniSparklineBase({ points, positive = true }: MiniSparklineProps) {
+function ExploreMiniSparkline({ points, positive = true }: MiniSparklineProps) {
   const gradientId = useId();
 
   if (points.length < 2) {
@@ -109,6 +109,5 @@ function MiniSparklineBase({ points, positive = true }: MiniSparklineProps) {
   );
 }
 
-export { MiniSparklineBase as ExploreMiniSparkline };
-export { MiniSparklineBase };
-export default MiniSparklineBase;
+export { ExploreMiniSparkline };
+export default ExploreMiniSparkline;
