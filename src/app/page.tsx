@@ -5,15 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import IHSGChartCard from "@/features/home/components/ihsg-chart-card";
 import MarketStatusCard from "@/features/home/components/market-status-card";
-import MacroSlider from "@/features/explore/components/macro-slider";
-import MacroHistoryPanel from "@/features/explore/components/macro-history-panel";
+import { NewsSection } from "@/features/home/components/news-section";
+import MacroSlider from "@/features/macro-indicators/components/macro-slider";
+import MacroHistoryPanel from "@/features/macro-indicators/components/macro-history-panel";
 import StockSummaryBoard from "@/features/explore/components/stock-summary-board";
 import OverviewBoard from "@/features/explore/components/overview-board";
 import StockSummarySkeleton from "@/features/explore/components/stock-summary-skeleton";
 import UmaSuspendBoard from "@/features/explore/components/uma-suspend-board";
 import SectorBoard from "@/features/explore/components/sector-board";
-import { useMacroHistory } from "@/features/explore/hooks/use-macro-history";
-import { useMacro } from "@/features/explore/hooks/use-macro";
+import { useMacroHistory } from "@/features/macro-indicators/hooks/use-macro-history";
+import { useMacro } from "@/features/macro-indicators/hooks/use-macro";
 import { useStockSummary } from "@/features/explore/hooks/use-stock-summary";
 import { useIndexSummary } from "@/features/explore/hooks/use-index-summary";
 import { generateLeaderboards } from "@/features/explore/services/stock-summary-leaderboard.service";
@@ -247,89 +248,38 @@ export default function HomePage() {
       {/* UMA, Suspend, Unsuspend */}
       <UmaSuspendBoard />
 
-      {/* Sektor */}
+      {/* Sektor & Indeks */}
       {indexLoading ? (
-        <div className="space-y-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <Skeleton className="h-5 w-28" />
-              <Skeleton className="h-3.5 w-24" />
-            </div>
-            <div className="overflow-hidden rounded-[1.5rem] border border-(--border) bg-(--surface) shadow-(--shadow-soft)">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-white/5 text-[11px] uppercase tracking-[0.16em] text-muted">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Nama</th>
-                      <th className="px-4 py-3 text-right font-semibold">Chg</th>
-                      <th className="px-4 py-3 text-right font-semibold">Val</th>
-                      <th className="px-4 py-3 text-right font-semibold">Cap</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <tr key={`sector-skel-${i}`} className="border-t border-white/8">
-                        <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-5 w-14 rounded-full" />
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-16" />
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-20" />
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-20" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <div className="space-y-3">
+          <div className="flex gap-2 pb-1">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton
+                key={`index-tab-skel-${i}`}
+                className="h-10 w-24 shrink-0 rounded-full"
+              />
+            ))}
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <Skeleton className="h-5 w-28" />
-              <Skeleton className="h-3.5 w-24" />
-            </div>
-            <div className="overflow-hidden rounded-[1.5rem] border border-(--border) bg-(--surface) shadow-(--shadow-soft)">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-white/5 text-[11px] uppercase tracking-[0.16em] text-muted">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Nama</th>
-                      <th className="px-4 py-3 text-right font-semibold">Chg</th>
-                      <th className="px-4 py-3 text-right font-semibold">Val</th>
-                      <th className="px-4 py-3 text-right font-semibold">Cap</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <tr key={`index-skel-${i}`} className="border-t border-white/8">
-                        <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-5 w-14 rounded-full" />
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-16" />
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-20" />
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <Skeleton className="ml-auto h-4 w-20" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          <div className="flex items-center justify-between gap-4 px-1">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-3.5 w-24" />
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
+            <div className="max-h-[300px] overflow-y-auto">
+              <div className="divide-y divide-(--border)">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={`index-skel-${i}`}
+                    className="flex items-center gap-4 px-4 py-3.5"
+                  >
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                    <Skeleton className="ml-auto h-4 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -343,6 +293,9 @@ export default function HomePage() {
       ) : (
         <SectorBoard indexSummary={indexSummary} />
       )}
+
+      {/* Berita Ekonomi & Pasar */}
+      <NewsSection />
 
       {/* Modal Makro */}
       {isMacroModalOpen ? (

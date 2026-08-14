@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
-import { fetchStockAnalysis } from "@/features/stock-analysis/services/stock-analysis.service";
+import { fetchStockAnalysis } from "@/features/stock-analysis/services/stock-api";
 import type { StockResponse } from "@/features/stock-analysis/types";
 import {
   getDerStatus,

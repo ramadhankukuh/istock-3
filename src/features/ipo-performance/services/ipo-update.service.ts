@@ -1,6 +1,6 @@
 import { redis } from "@/lib/redis/redis";
 import { formatWIB } from "@/lib/utils/date";
-import detailIPO from "@/lib/data/detailIPO.json";
+import detailIPO from "@/lib/data/detail-ipo.json";
 
 /**
  * Performance IPO tahun berjalan: harga IPO vs harga pasar (Yahoo).

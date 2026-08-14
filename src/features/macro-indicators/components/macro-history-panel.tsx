@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils/cn";
 import type {
   MacroHistoryPayload,
   MacroHistoryPoint,
-} from "@/features/explore/types";
+} from "@/features/macro-indicators/types";
 
 function formatPercent(value: number) {
   return `${value.toFixed(2).replace(".", ",")}%`;

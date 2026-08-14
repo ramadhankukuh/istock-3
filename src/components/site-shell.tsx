@@ -18,6 +18,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
   const isToolPage = pathname.startsWith("/tools/");
+  /** Bottom navbar hanya tampil di halaman utama: home, chart, explore, tools, portfolio. */
+  const showBottomNav =
+    !isToolPage &&
+    ["/", "/chart", "/explore", "/tools", "/portfolio"].some(
+      (root) => pathname === root || pathname.startsWith(`${root}/`),
+    );
   const activeNavIndex = navItems.findIndex(
     (item) => !item.disabled && isActive(pathname, item.href),
   );
@@ -163,11 +169,11 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className={`mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6 ${isToolPage ? "pb-6" : "pb-24"}`}>
+      <main className={`mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6 ${showBottomNav ? "pb-24" : "pb-6"}`}>
         {children}
       </main>
 
-      {!isToolPage && (
+      {showBottomNav && (
       /* ── Mobile bottom navbar ── */
       <nav className="fixed inset-x-4 bottom-4 z-40 sm:inset-x-8 lg:hidden">
         <div className="mx-auto max-w-2xl rounded-4xl border border-(--border)/80 bg-(--glass) p-1.5 shadow-(--shadow) shadow-black/3 backdrop-blur-3xl backdrop-saturate-150">

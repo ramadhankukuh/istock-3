@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { AuthPanel } from "@/features/auth/components/auth-panel";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense fallback={null}>
-      <AuthPanel mode="login" />
+      <AuthPanel mode="register" />
     </Suspense>
   );
 }

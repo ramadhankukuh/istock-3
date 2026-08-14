@@ -1,11 +1,10 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import ExploreCard from "@/features/explore/components/explore-card";
 import ExploreCardSkeleton from "@/features/explore/components/explore-card-skeleton";
+import { SwingTradePreview } from "@/features/explore/components/swing-trade-preview";
 import { useExplore } from "@/features/explore/hooks/use-explore";
 import { cn } from "@/lib/utils/cn";
 import type { ExploreCategory } from "@/features/explore/types";
@@ -100,27 +99,7 @@ export default function ExplorePage() {
       </div>
 
       {/* Swing Trade section */}
-      <div className="rounded-4xl border border-(--border) bg-(--surface) p-6 shadow-(--shadow)">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-3">
-            <Badge variant="secondary">Swing Trade</Badge>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Ruang swing trader
-            </h2>
-            <p className="max-w-xl text-sm text-muted">
-              Area eksklusif untuk preset pribadi, watchlist, dan catatan trade
-              — terpisah dari guest. Login dengan Google untuk mengakses.
-            </p>
-          </div>
-          <Link
-            href="/swing-trade"
-            className="focus-ring inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90 shrink-0"
-          >
-            Buka Swing Trade
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+      <SwingTradePreview />
     </section>
   );
 }

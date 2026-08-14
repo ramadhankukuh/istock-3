@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { formatCompactRupiah } from "@/lib/utils/format";
 import type { IndexSummaryPayload } from "@/features/explore/services/index-summary.service";
@@ -9,6 +9,9 @@ import {
   ArrowUpRight,
   Minus,
 } from "lucide-react";
+
+/** Maksimal baris yang tampil sebelum scroll vertikal diaktifkan. */
+const MAX_VISIBLE_ROWS = 5;
 
 const SECTOR_LABELS: Record<string, string> = {
   IDXENERGY: "Energy",
@@ -72,20 +75,23 @@ function SummaryTableSection({
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
-        <div className="overflow-x-auto">
+        <div
+          className="max-h-[300px] overflow-x-auto overflow-y-auto"
+          style={{ maxHeight: `calc(${MAX_VISIBLE_ROWS} * 52px + 44px)` }}
+        >
           <table className="w-max min-w-[560px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-(--border) bg-white/40 dark:bg-white/[0.04]">
-                <th className="py-3 pl-4 pr-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+              <tr className="border-b border-(--border)">
+                <th className="sticky top-0 z-10 bg-(--surface-strong) py-3 pl-4 pr-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                   Nama
                 </th>
-                <th className="w-[120px] px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                <th className="sticky top-0 z-10 w-[120px] bg-(--surface-strong) px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                   Chg
                 </th>
-                <th className="w-[130px] px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                <th className="sticky top-0 z-10 w-[130px] bg-(--surface-strong) px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                   Val
                 </th>
-                <th className="w-[130px] py-3 pl-3 pr-4 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                <th className="sticky top-0 z-10 w-[130px] bg-(--surface-strong) py-3 pl-3 pr-4 text-right text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                   Cap
                 </th>
               </tr>
@@ -148,66 +154,99 @@ export default function SectorBoard({
 }: {
   indexSummary: IndexSummaryPayload | null;
 }) {
-  const rawSectors = indexSummary?.sector ?? [];
-  const rawIndices = indexSummary?.index ?? [];
+  const [activeTab, setActiveTab] = useState<"sector" | "index">("sector");
 
-  const sortedSectors = useMemo(
-    () =>
-      [...rawSectors]
-        .map((sector) => {
-          const code = String(sector.IndexCode ?? "").toUpperCase();
-          const rawName = String(sector.IndexName ?? "");
-          const previous = Number(sector.Previous ?? 0);
-          const close = Number(sector.Close ?? 0);
+  const sortedSectors = useMemo(() => {
+    const rawSectors = indexSummary?.sector ?? [];
+    return [...rawSectors]
+      .map((sector) => {
+        const code = String(sector.IndexCode ?? "").toUpperCase();
+        const rawName = String(sector.IndexName ?? "");
+        const previous = Number(sector.Previous ?? 0);
+        const close = Number(sector.Close ?? 0);
 
-          return {
-            code,
-            name: getDisplayName(code, rawName),
-            changePct: getChangePct(previous, close),
-            value: Number(sector.Value ?? 0),
-            marketCap: Number(sector.MarketCapital ?? 0),
-          } satisfies SummaryRow;
-        })
-        .sort((a, b) => b.changePct - a.changePct),
-    [rawSectors],
-  );
+        return {
+          code,
+          name: getDisplayName(code, rawName),
+          changePct: getChangePct(previous, close),
+          value: Number(sector.Value ?? 0),
+          marketCap: Number(sector.MarketCapital ?? 0),
+        } satisfies SummaryRow;
+      })
+      .sort((a, b) => b.changePct - a.changePct);
+  }, [indexSummary]);
 
-  const sortedIndices = useMemo(
-    () =>
-      [...rawIndices]
-        .map((index) => {
-          const code = String(index.IndexCode ?? "").toUpperCase();
-          const rawName = String(index.IndexName ?? "");
-          const previous = Number(index.Previous ?? 0);
-          const close = Number(index.Close ?? 0);
+  const sortedIndices = useMemo(() => {
+    const rawIndices = indexSummary?.index ?? [];
+    return [...rawIndices]
+      .map((index) => {
+        const code = String(index.IndexCode ?? "").toUpperCase();
+        const rawName = String(index.IndexName ?? "");
+        const previous = Number(index.Previous ?? 0);
+        const close = Number(index.Close ?? 0);
 
-          return {
-            code,
-            name: rawName.replace(/^Indeks\s*/i, "") || code,
-            changePct: getChangePct(previous, close),
-            value: Number(index.Value ?? 0),
-            marketCap: Number(index.MarketCapital ?? 0),
-          } satisfies SummaryRow;
-        })
-        .sort((a, b) => b.changePct - a.changePct),
-    [rawIndices],
-  );
+        return {
+          code,
+          name: rawName.replace(/^Indeks\s*/i, "") || code,
+          changePct: getChangePct(previous, close),
+          value: Number(index.Value ?? 0),
+          marketCap: Number(index.MarketCapital ?? 0),
+        } satisfies SummaryRow;
+      })
+      .sort((a, b) => b.changePct - a.changePct);
+  }, [indexSummary]);
 
-  if (sortedSectors.length === 0 && sortedIndices.length === 0) return null;
+  const tabs = [
+    { key: "sector", label: "Sektor", rows: sortedSectors.length },
+    { key: "index", label: "Indeks", rows: sortedIndices.length },
+  ] as const;
+
+  const availableTabs = tabs.filter((tab) => tab.rows > 0);
+  const resolvedActiveTab = availableTabs.some(
+    (tab) => tab.key === activeTab,
+  )
+    ? activeTab
+    : availableTabs[0]?.key ?? "sector";
+
+  if (availableTabs.length === 0) return null;
 
   return (
     <div className="space-y-3">
-      <SummaryTableSection
-        title="Sektor IDX"
-        updatedAt={indexSummary?.lastUpdateFormatted}
-        rows={sortedSectors}
-      />
+      {/* Tab Sektor / Indeks */}
+      {availableTabs.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          {availableTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              aria-pressed={resolvedActiveTab === tab.key}
+              className={cn(
+                "focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                resolvedActiveTab === tab.key
+                  ? "bg-foreground text-background"
+                  : "bg-(--surface-strong) text-muted hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <SummaryTableSection
-        title="Indeks IDX"
-        updatedAt={indexSummary?.lastUpdateFormatted}
-        rows={sortedIndices}
-      />
+      {resolvedActiveTab === "sector" ? (
+        <SummaryTableSection
+          title="Sektor IDX"
+          updatedAt={indexSummary?.lastUpdateFormatted}
+          rows={sortedSectors}
+        />
+      ) : (
+        <SummaryTableSection
+          title="Indeks IDX"
+          updatedAt={indexSummary?.lastUpdateFormatted}
+          rows={sortedIndices}
+        />
+      )}
     </div>
   );
 }

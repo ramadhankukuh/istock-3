@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
-import tradHolidays from "@/lib/data/tradHoliday.json";
+import tradHolidays from "@/lib/data/trade-holiday.json";
 
 function getCountdown(
   now: Date,

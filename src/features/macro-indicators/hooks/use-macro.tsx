@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { MacroIndicator } from "@/features/explore/types";
-import { fetchMacroApi } from "@/features/explore/services/macro-api";
+import type { MacroIndicator } from "@/features/macro-indicators/types";
+import { fetchMacroApi } from "@/features/macro-indicators/services/macro-api";
 
 export function useMacro() {
   const [macro, setMacro] = useState<MacroIndicator[] | null>(null);

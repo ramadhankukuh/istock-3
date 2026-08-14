@@ -29,7 +29,7 @@ import type {
   MacroHistoryPayload,
   MacroIndicator,
   MacroKey,
-} from "@/features/explore/types";
+} from "@/features/macro-indicators/types";
 
 export type MacroPayload = {
   inflation: InflationLatestPayload;

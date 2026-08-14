@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   MacroHistoryPayload,
   MacroIndicator,
-} from "@/features/explore/types";
-import { fetchMacroHistoryApi } from "@/features/explore/services/macro-api";
+} from "@/features/macro-indicators/types";
+import { fetchMacroHistoryApi } from "@/features/macro-indicators/services/macro-api";
 
 export function useMacroHistory(indicators: MacroIndicator[] | null) {
   const [activeKey, setActiveKey] = useState<MacroIndicator["key"] | null>(

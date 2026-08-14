@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ToolHeaderCard from "@/components/ui/tool-header-card";
 import { Accordion } from "@/components/ui/accordion";
-import { kongloList } from "@/lib/data/kongloList";
+import { kongloList } from "@/lib/data/konglo-list";
 
 type Row = {
   ticker: string;

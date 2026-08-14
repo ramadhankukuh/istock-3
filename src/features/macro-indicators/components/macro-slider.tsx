@@ -4,7 +4,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
 import { useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
-import type { MacroIndicator, MacroKey } from "@/features/explore/types";
+import type { MacroIndicator, MacroKey } from "@/features/macro-indicators/types";
 
 function getBadgeIcon(badge?: string | null) {
   if (!badge) {

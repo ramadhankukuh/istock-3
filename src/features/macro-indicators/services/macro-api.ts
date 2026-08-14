@@ -2,7 +2,7 @@ import type {
   MacroHistoryPayload,
   MacroIndicator,
   MacroKey,
-} from "@/features/explore/types";
+} from "@/features/macro-indicators/types";
 
 export async function fetchMacroApi(signal?: AbortSignal) {
   const res = await fetch("/api/macro", { signal, cache: "no-store" });
