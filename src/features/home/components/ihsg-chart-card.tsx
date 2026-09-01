@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import MarketStatusBadge from "@/features/home/components/market-status-badge";
 import IHSGRechartsChart from "@/features/home/components/ihsg-recharts-chart";
 import { cn } from "@/lib/utils/cn";
-import { formatCompactRupiah, formatCompactId } from "@/lib/utils/format";
+import { formatCompactId } from "@/lib/utils/format";
 import type { IhsgSummary } from "@/features/explore/services/index-summary.service";
 
 type IntradayPoint = {
@@ -81,34 +81,15 @@ export default function IHSGChartCard({
   }, []);
 
   useEffect(() => {
-    load();
+    Promise.resolve().then(() => load());
   }, [load]);
-
-  // Debug: log data summary to verify early-morning drop exists
-  useEffect(() => {
-    if (intraday.length > 2) {
-      const prices = intraday.map((d) => d.price);
-      const rawMin = Math.min(...prices);
-      const rawMax = Math.max(...prices);
-      const range = rawMax - rawMin;
-      console.log("[IHSG Data Debug]", {
-        count: intraday.length,
-        first: intraday[0],
-        last: intraday[intraday.length - 1],
-        intradayMin: rawMin,
-        intradayMax: rawMax,
-        range,
-        earlyPoints: intraday.slice(0, 5),
-      });
-    }
-  }, [intraday]);
 
   const isUp = (quote?.change ?? 0) >= 0;
 
   return (
-    <Card className="group overflow-hidden border-(--border) bg-(--surface) shadow-(--shadow)">
+    <div className="space-y-4">
       {isLoading ? (
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="space-y-2">
@@ -117,45 +98,46 @@ export default function IHSGChartCard({
             </div>
           </div>
           <Skeleton className="h-10 w-36" />
-          <Skeleton className="h-44 w-full rounded-2xl" />
         </div>
       ) : (
         <>
-          {/* Header — same style as ExploreCard but larger */}
-          <CardHeader className="space-y-3 pb-4 sm:pb-5">
-            <div className="flex items-center gap-3">
-              {!logoFailed ? (
-                <div className="flex h-10 w-10 items-center justify-center sm:h-12 sm:w-12">
-                  <Image
-                    src="https://ik.imagekit.io/kuh/istock/indeks/IHSG.png?tr=f-auto"
-                    alt="IHSG logo"
-                    width={44}
-                    height={44}
-                    className="h-9 w-9 object-contain sm:h-11 sm:w-11"
-                    unoptimized
-                    onError={() => setLogoFailed(true)}
-                  />
-                </div>
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-(--border) bg-(--surface-strong) text-sm font-semibold sm:h-12 sm:w-12">
-                  I
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <CardTitle className="flex items-center gap-1.5 text-lg sm:text-xl">
-                  IHSG
-                  {quote?.marketState === "REGULAR" && (
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
-                  )}
-                </CardTitle>
-                <p className="truncate text-xs leading-snug text-muted sm:text-sm">
-                  Indeks Harga Saham Gabungan
-                </p>
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            {!logoFailed ? (
+              <div className="flex h-10 w-10 items-center justify-center sm:h-12 sm:w-12">
+                <Image
+                  src="https://ik.imagekit.io/kuh/istock/indeks/IHSG.png?tr=f-auto"
+                  alt="IHSG logo"
+                  width={44}
+                  height={44}
+                  className="h-9 w-9 object-contain sm:h-11 sm:w-11"
+                  unoptimized
+                  onError={() => setLogoFailed(true)}
+                />
               </div>
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-(--border) bg-(--surface-strong) text-sm font-semibold sm:h-12 sm:w-12">
+                I
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              {/* Badge status sejajar kanan tulisan IHSG */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-semibold tracking-tight sm:text-xl">
+                  IHSG
+                </span>
+                {quote?.marketState === "REGULAR" && (
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+                )}
+                <MarketStatusBadge />
+              </div>
+              <p className="truncate text-xs leading-snug text-muted sm:text-sm">
+                Indeks Harga Saham Gabungan
+              </p>
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent className="space-y-4 sm:space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {/* Price & Change */}
             <div className="flex items-baseline gap-3">
               <p className="text-2xl font-bold tracking-tight sm:text-4xl">
@@ -181,20 +163,22 @@ export default function IHSGChartCard({
               </p>
             </div>
 
-            {/* Recharts chart — dynamic Y-axis, WIB time labels */}
-            <div className="h-36 w-full sm:h-44">
-              <IHSGRechartsChart
-                data={intraday}
-                prevClose={prevClose}
-                positive={isUp}
-              />
-            </div>
+            {/* Grafik intraday IHSG */}
+            {intraday.length > 1 ? (
+              <div className="h-36 w-full sm:h-44">
+                <IHSGRechartsChart
+                  data={intraday}
+                  prevClose={prevClose}
+                  positive={isUp}
+                />
+              </div>
+            ) : null}
 
-            {/* 3 data cards: Open/High/Low | M.Cap/Value/NetForeign | Vol/Freq */}
+            {/* 3 kolom statistik — tiap kolom jadi card, cuma border (transparan, tanpa shadow) */}
             {quote && ihsg ? (
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar snap-x snap-mandatory -mx-1 px-1 pb-0.5 sm:grid sm:grid-cols-3 sm:overflow-visible sm:snap-none sm:mx-0 sm:px-0">
+              <div className="hide-scrollbar flex gap-2 overflow-x-auto px-1 pb-0.5 sm:gap-3 sm:overflow-visible sm:px-0">
                 {/* Kiri: Open, High, Low */}
-                <div className="min-w-36 shrink-0 snap-center space-y-1.5 rounded-xl border border-(--border) bg-(--surface-strong) px-3 py-2.5 sm:min-w-0 sm:shrink sm:px-4 sm:py-3">
+                <div className="min-w-36 shrink-0 space-y-1.5 rounded-xl border border-(--border) bg-transparent p-3 sm:min-w-0 sm:flex-1 sm:p-4">
                   <DataRow
                     label="Open"
                     value={quote.open.toLocaleString("id-ID", {
@@ -221,7 +205,7 @@ export default function IHSGChartCard({
                 </div>
 
                 {/* Tengah: M. Cap, Value, Net Foreign */}
-                <div className="min-w-36 shrink-0 snap-center space-y-1.5 rounded-xl border border-(--border) bg-(--surface-strong) px-3 py-2.5 sm:min-w-0 sm:shrink sm:px-4 sm:py-3">
+                <div className="min-w-36 shrink-0 space-y-1.5 rounded-xl border border-(--border) bg-transparent p-3 sm:min-w-0 sm:flex-1 sm:p-4">
                   <DataRow
                     label="M. Cap"
                     value={`Rp${formatCompactId(ihsg.marketCap)}`}
@@ -248,7 +232,7 @@ export default function IHSGChartCard({
                 </div>
 
                 {/* Kanan: Volume, Freq */}
-                <div className="min-w-28 shrink-0 snap-center space-y-1.5 rounded-xl border border-(--border) bg-(--surface-strong) px-3 py-2.5 sm:min-w-0 sm:shrink sm:px-4 sm:py-3">
+                <div className="min-w-28 shrink-0 space-y-1.5 rounded-xl border border-(--border) bg-transparent p-3 sm:min-w-0 sm:flex-1 sm:p-4">
                   <DataRow label="Vol" value={formatCompactId(quote.volume)} />
                   <DataRow
                     label="Freq"
@@ -257,9 +241,9 @@ export default function IHSGChartCard({
                 </div>
               </div>
             ) : null}
-          </CardContent>
+          </div>
         </>
       )}
-    </Card>
+    </div>
   );
 }

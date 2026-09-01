@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const token = process.env.CRON_SECRET;
 
-  if (!token || authHeader !== `Bearer ${token}`) {
+  if (token && authHeader !== `Bearer ${token}`) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 },

@@ -3,22 +3,22 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TabBar } from "@/components/ui/tab-bar";
 import IHSGChartCard from "@/features/home/components/ihsg-chart-card";
-import MarketStatusCard from "@/features/home/components/market-status-card";
-import { NewsSection } from "@/features/home/components/news-section";
-import MacroSlider from "@/features/macro-indicators/components/macro-slider";
-import MacroHistoryPanel from "@/features/macro-indicators/components/macro-history-panel";
+import MacroSlider from "@/features/explore/components/macro-slider";
+import MacroHistoryPanel from "@/features/explore/components/macro-history-panel";
 import StockSummaryBoard from "@/features/explore/components/stock-summary-board";
 import OverviewBoard from "@/features/explore/components/overview-board";
 import StockSummarySkeleton from "@/features/explore/components/stock-summary-skeleton";
 import UmaSuspendBoard from "@/features/explore/components/uma-suspend-board";
 import SectorBoard from "@/features/explore/components/sector-board";
-import { useMacroHistory } from "@/features/macro-indicators/hooks/use-macro-history";
-import { useMacro } from "@/features/macro-indicators/hooks/use-macro";
+import SectionHeading from "@/features/explore/components/section-heading";
+import NewsSection from "@/features/home/components/news-section";
+import { useMacroHistory } from "@/features/explore/hooks/use-macro-history";
+import { useMacro } from "@/features/explore/hooks/use-macro";
 import { useStockSummary } from "@/features/explore/hooks/use-stock-summary";
 import { useIndexSummary } from "@/features/explore/hooks/use-index-summary";
 import { generateLeaderboards } from "@/features/explore/services/stock-summary-leaderboard.service";
-import { cn } from "@/lib/utils/cn";
 import type { StockSummaryItem } from "@/features/explore/types";
 
 export default function HomePage() {
@@ -145,17 +145,14 @@ export default function HomePage() {
   }, [resolvedActiveSummaryKey, summaryTabs]);
 
   return (
-    <section className="space-y-6 overflow-hidden">
-      {/* Market Status */}
-      <MarketStatusCard />
-
+    <section className="space-y-6">
       {/* Chart IHSG */}
       <IHSGChartCard ihsg={indexSummary?.ihsgSummary} netForeign={netForeign} />
 
       {/* Makro Indonesia */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground sm:text-base">
+      <div className="space-y-3">
+        <div className="-mx-4 flex items-center justify-between gap-2 bg-[#f8f8f8] px-4 py-3 dark:bg-[#1e1e1e] sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-xl lg:px-6">
+          <span className="text-base font-bold text-foreground sm:text-lg">
             Makro Indonesia
           </span>
         </div>
@@ -186,58 +183,49 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      {/* Top Value, Gainer, dll — card tetap, konten di-skeleton */}
-      <div className="space-y-4">
-        {/* Tab buttons — skeleton saat loading */}
-        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-          {summaryLoading
-            ? Array.from({ length: 7 }).map((_, i) => (
-                <Skeleton
-                  key={`tab-skel-${i}`}
-                  className="h-10 w-28 shrink-0 rounded-full"
-                />
-              ))
-            : stockSummary &&
-              leaderboards &&
-              summaryTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveSummaryKey(tab.key)}
-                  aria-pressed={tab.key === activeSummaryTab?.key}
-                  className={cn(
-                    "focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                    tab.key === activeSummaryTab?.key
-                      ? "bg-foreground text-background"
-                      : "bg-(--surface-strong) text-muted hover:text-foreground",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-        </div>
+      {/* Top Movers — tanpa card, tab style seperti /chart */}
+      <div className="space-y-3">
+        <SectionHeading
+          title="Top Movers"
+          updatedAt={stockSummary?.lastUpdateFormatted}
+        />
 
-        {/* Card board — skeleton konten di dalam card */}
-        <Card className="overflow-hidden">
-          {summaryLoading ? (
-            <>
-              <div className="px-4 pt-4 pb-0">
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <StockSummarySkeleton />
-            </>
-          ) : summaryError ? (
-            <CardContent className="pt-6 text-sm text-red-500">
-              {summaryError}
-            </CardContent>
-          ) : stockSummary && leaderboards && activeSummaryTab ? (
-            <StockSummaryBoard
-              title={activeSummaryTab.label}
-              items={activeSummaryTab.items}
-              inCard={false}
-            />
-          ) : null}
-        </Card>
+        {/* Tab buttons — skeleton saat loading */}
+        {summaryLoading ? (
+          <div className="hide-scrollbar -mx-1 flex gap-1 overflow-x-auto border-b border-(--border) px-1">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton
+                key={`tab-skel-${i}`}
+                className="h-10 w-24 shrink-0"
+              />
+            ))}
+          </div>
+        ) : stockSummary && leaderboards ? (
+          <TabBar
+            tabs={summaryTabs.map((tab) => ({
+              key: tab.key,
+              label: tab.label,
+            }))}
+            activeKey={resolvedActiveSummaryKey}
+            onChange={setActiveSummaryKey}
+          />
+        ) : null}
+
+        {/* Board — tanpa card */}
+        {summaryLoading ? (
+          <>
+            <Skeleton className="h-5 w-24" />
+            <StockSummarySkeleton />
+          </>
+        ) : summaryError ? (
+          <p className="pt-4 text-sm text-red-500">{summaryError}</p>
+        ) : stockSummary && leaderboards && activeSummaryTab ? (
+          <StockSummaryBoard
+            title={activeSummaryTab.label}
+            items={activeSummaryTab.items}
+            inCard={false}
+          />
+        ) : null}
       </div>
 
       {/* Stock Breadth */}
@@ -248,51 +236,71 @@ export default function HomePage() {
       {/* UMA, Suspend, Unsuspend */}
       <UmaSuspendBoard />
 
-      {/* Sektor & Indeks */}
-      {indexLoading ? (
-        <div className="space-y-3">
-          <div className="flex gap-2 pb-1">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton
-                key={`index-tab-skel-${i}`}
-                className="h-10 w-24 shrink-0 rounded-full"
-              />
-            ))}
-          </div>
-          <div className="flex items-center justify-between gap-4 px-1">
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-3.5 w-24" />
-          </div>
-          <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
-            <div className="max-h-[300px] overflow-y-auto">
-              <div className="divide-y divide-(--border)">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={`index-skel-${i}`}
-                    className="flex items-center gap-4 px-4 py-3.5"
-                  >
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-5 w-14 rounded-full" />
-                    </div>
-                    <Skeleton className="ml-auto h-4 w-16" />
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                ))}
+      {/* Sector & Indeks */}
+      <div className="space-y-3">
+        <SectionHeading
+          title="Sector & Indeks"
+          updatedAt={indexSummary?.lastUpdateFormatted}
+        />
+
+        {indexLoading ? (
+          <div className="space-y-4">
+            {/* Tab skeleton */}
+            <div className="hide-scrollbar -mx-1 flex gap-1 overflow-x-auto border-b border-(--border) px-1">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton
+                  key={`sector-tab-skel-${i}`}
+                  className="h-10 w-24 shrink-0"
+                />
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-white/5 text-[11px] uppercase tracking-[0.16em] text-muted">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold">Nama</th>
+                      <th className="px-4 py-3 text-right font-semibold">Chg</th>
+                      <th className="px-4 py-3 text-right font-semibold">Val</th>
+                      <th className="px-4 py-3 text-right font-semibold">Cap</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={`sector-skel-${i}`} className="border-t border-white/8">
+                        <td className="px-4 py-4">
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Skeleton className="ml-auto h-4 w-16" />
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Skeleton className="ml-auto h-4 w-20" />
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Skeleton className="ml-auto h-4 w-20" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        </div>
-      ) : indexError ? (
-        <Card>
-          <CardContent className="pt-6 text-sm text-red-500">
-            {indexError}
-          </CardContent>
-        </Card>
-      ) : (
-        <SectorBoard indexSummary={indexSummary} />
-      )}
+        ) : indexError ? (
+          <Card>
+            <CardContent className="pt-6 text-sm text-red-500">
+              {indexError}
+            </CardContent>
+          </Card>
+        ) : (
+          <SectorBoard indexSummary={indexSummary} />
+        )}
+      </div>
 
       {/* Berita Ekonomi & Pasar */}
       <NewsSection />

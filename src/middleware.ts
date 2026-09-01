@@ -16,5 +16,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/swing-trade/:path*", "/swing-trade"],
+  // Halaman /swing-trade sudah dihapus; fitur swing trade kini ada di /explore
+  // dengan gating login sendiri (client-side). Middleware tidak melindungi route
+  // apapun untuk saat ini.
+  matcher: [],
 };

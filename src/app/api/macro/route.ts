@@ -1,9 +1,9 @@
 import {
   getMacroHistory,
   getMacroIndicators,
-} from "@/features/macro-indicators/services/macro.service";
-import { getLatestInflationData } from "@/features/macro-indicators/services/inflation.service";
-import type { MacroKey } from "@/features/macro-indicators/types";
+} from "@/features/explore/services/macro.service";
+import { getLatestInflationData } from "@/features/explore/services/inflation.service";
+import type { MacroKey } from "@/features/explore/types";
 
 export const dynamic = "force-dynamic";
 

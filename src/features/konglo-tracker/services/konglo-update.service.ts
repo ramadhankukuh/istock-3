@@ -1,6 +1,6 @@
 import { yahooFinance } from "@/lib/yahoo-finance";
 import { redis } from "@/lib/redis/redis";
-import { kongloList } from "@/lib/data/konglo-list";
+import { kongloList } from "@/lib/data/kongloList";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

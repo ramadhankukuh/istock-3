@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionCard, StatItem } from "@/features/chart/components/stat-item";
+import { Section, StatItem } from "@/features/chart/components/stat-item";
 import type { ChartData } from "@/features/chart/types";
 import {
   formatCompactNumber,
@@ -32,7 +32,7 @@ export function FinancialsTab({ data }: { data: ChartData }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Upcoming Events">
+      <Section title="Upcoming Events">
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <StatItem
             label="Next Earnings"
@@ -47,9 +47,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
             value={formatDateShort(calendar.earningsCallStart)}
           />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Financial Health">
+      <Section title="Financial Health">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <StatItem
             label="Total Revenue"
@@ -69,9 +69,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
             value={formatNumber(financialHealth.revenuePerShare)}
           />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Margins & Growth">
+      <Section title="Margins & Growth">
         <div className="grid gap-4 sm:grid-cols-2">
           <MarginBar label="Gross Margin" value={financialHealth.grossMargin} />
           <MarginBar label="Operating Margin" value={financialHealth.operatingMargin} />
@@ -100,9 +100,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
             valueClassName="text-emerald-500"
           />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Dividend Info">
+      <Section title="Dividend Info">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <StatItem label="Dividend Rate" value={`IDR ${formatNumber(dividend.rate, 2)}`} />
           <StatItem label="Dividend Yield" value={formatPercentPlain(dividend.yieldPercent)} />
@@ -110,9 +110,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
           <StatItem label="5Y Avg Yield" value={formatPercentPlain(dividend.fiveYearAvgYield)} />
           <StatItem label="Ex-Dividend" value={formatDateShort(dividend.exDividendDate)} />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Key Statistics">
+      <Section title="Key Statistics">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <StatItem label="Beta" value={formatNumber(keyStatistics.beta, 3)} />
           <StatItem label="Book Value" value={formatNumber(keyStatistics.bookValue)} />
@@ -145,9 +145,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
           />
           <StatItem label="Last Split" value={keyStatistics.lastSplitFactor ?? "-"} />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Ownership & Short Interest">
+      <Section title="Ownership & Short Interest">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <StatItem
             label="Insider Ownership"
@@ -167,9 +167,9 @@ export function FinancialsTab({ data }: { data: ChartData }) {
             value={formatCompactNumber(keyStatistics.sharesShort)}
           />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Fiscal Markers">
+      <Section title="Fiscal Markers">
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <StatItem
             label="Most Recent Quarter"
@@ -184,7 +184,7 @@ export function FinancialsTab({ data }: { data: ChartData }) {
             value={formatDateShort(keyStatistics.nextFiscalYearEnd)}
           />
         </div>
-      </SectionCard>
+      </Section>
     </div>
   );
 }

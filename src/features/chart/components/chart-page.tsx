@@ -1,7 +1,10 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
+import { TabContentSkeleton } from "@/features/chart/components/chart-page-skeleton";
 import { PriceHeader } from "@/features/chart/components/price-header";
 import { ChartPanel } from "@/features/chart/components/chart-panel";
+import { AddToPortfolioButton } from "@/features/chart/components/add-to-portfolio-button";
 import { TabNav } from "@/features/chart/components/tab-nav";
 import { KeystatsTab } from "@/features/chart/components/tabs/keystats-tab";
 import { AnalysisTab } from "@/features/chart/components/tabs/analysis-tab";
@@ -17,15 +20,18 @@ type Props = {
 
 export default function ChartPage({ initialSymbol, initialTab }: Props) {
   const {
-    symbolInput,
-    setSymbolInput,
     symbol,
     tab,
     data,
     loading,
     error,
     dark,
-    isPositive,
+    range,
+    setRange,
+    style,
+    setStyle,
+    intraday,
+    hourly,
     goToSymbol,
     goToTab,
   } = useChartPage(initialSymbol, initialTab);
@@ -34,15 +40,34 @@ export default function ChartPage({ initialSymbol, initialTab }: Props) {
     <div className="space-y-4">
       <PriceHeader
         symbol={symbol}
-        symbolInput={symbolInput}
-        setSymbolInput={setSymbolInput}
         onSubmitSymbol={goToSymbol}
         data={data}
         loading={loading}
-        isPositive={isPositive}
+        range={range}
+        candles={data?.candles ?? []}
       />
 
-      <ChartPanel candles={data?.candles ?? []} dark={dark} loading={loading} />
+      <ChartPanel
+        candles={data?.candles ?? []}
+        dark={dark}
+        loading={loading}
+        range={range}
+        onRangeChange={setRange}
+        style={style}
+        onStyleChange={setStyle}
+        intraday={intraday}
+        hourly={hourly}
+        previousClose={data?.quote.previousClose ?? null}
+      />
+
+      {loading ? (
+        <Skeleton className="h-12 w-full rounded-xl" />
+      ) : (
+        <AddToPortfolioButton
+          symbol={symbol}
+          price={data?.quote.price ?? null}
+        />
+      )}
 
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-medium text-red-500">
@@ -50,15 +75,11 @@ export default function ChartPage({ initialSymbol, initialTab }: Props) {
         </div>
       )}
 
-      <div className="rounded-2xl border border-(--border) bg-(--surface) shadow-(--shadow-soft)">
-        <div className="px-3 pt-2 sm:px-4">
-          <TabNav active={tab} onChange={goToTab} />
-        </div>
-        <div className="p-4 sm:p-5">
-          {loading && !data ? (
-            <p className="py-8 text-center text-sm text-muted">
-              Memuat data {symbol}…
-            </p>
+      <div>
+        <TabNav active={tab} onChange={goToTab} />
+        <div className="mt-4">
+          {loading ? (
+            <TabContentSkeleton />
           ) : data ? (
             <>
               {tab === "keystats" && <KeystatsTab data={data} />}

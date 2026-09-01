@@ -1,44 +1,33 @@
 import { NextResponse } from "next/server";
-import { readScreenerCache } from "@/features/swing-screener/services/screener-cache.service";
-import type { SwingScreenerPayload } from "@/features/swing-screener/types";
+import { getSwingScreenerCache } from "@/features/swing-screener/services/screener-update.service";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Endpoint untuk user — HANYA membaca hasil screening dari Redis.
- * Tidak ada fetch IDX / query Turso di path ini. Kalau Redis kosong,
- * tampilkan state "data belum tersedia" (available: false).
+ * GET /api/screener/swing
+ *
+ * Baca hasil screening dari Redis (data layer — diisi oleh pipeline cron).
+ * Dipakai hook `useSwingScreener` di halaman /explore.
  */
 export async function GET() {
   try {
-    const cache = await readScreenerCache();
+    const payload = await getSwingScreenerCache();
 
-    if (!cache) {
-      const payload: SwingScreenerPayload = {
-        available: false,
-        updatedAt: null,
-        message:
-          "Data belum tersedia. Tunggu cron berikutnya (hari kerja, 17:00 WIB).",
-        results: [],
-        summary: null,
-      };
-      return NextResponse.json(payload);
+    if (!payload) {
+      return NextResponse.json(
+        {
+          error:
+            "Data screener belum tersedia. Jalankan update terlebih dahulu.",
+        },
+        { status: 404 },
+      );
     }
 
-    return NextResponse.json(cache);
+    return NextResponse.json(payload);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Swing screener read error:", error);
+    console.error("Failed to read swing screener cache:", error);
     return NextResponse.json(
-      {
-        available: false,
-        updatedAt: null,
-        message: "Gagal membaca data screener.",
-        results: [],
-        summary: null,
-      },
+      { error: "Gagal membaca data screener." },
       { status: 500 },
     );
   }

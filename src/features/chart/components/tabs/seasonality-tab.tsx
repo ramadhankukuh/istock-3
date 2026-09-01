@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import { SectionCard } from "@/features/chart/components/stat-item";
+import { Section } from "@/features/chart/components/stat-item";
 import type { ChartData, SeasonalityTable } from "@/features/chart/types";
 import { formatPercentSigned } from "@/features/chart/utils";
 
@@ -89,7 +89,7 @@ function ReturnsTable({ table }: { table: SeasonalityTable }) {
   );
 }
 
-function SummaryCard({
+function SummaryItem({
   label,
   value,
   sub,
@@ -99,7 +99,7 @@ function SummaryCard({
   sub: string;
 }) {
   return (
-    <div className="rounded-xl border border-(--border) bg-(--surface-strong) p-4 text-center">
+    <div className="text-center">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
         {label}
       </p>
@@ -115,19 +115,19 @@ export function SeasonalityTab({ data }: { data: ChartData }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard>
+      <Section>
         <div className="grid grid-cols-3 gap-3">
-          <SummaryCard
+          <SummaryItem
             label="Best Avg"
             value={formatPercentSigned(quarterlySummary.bestValue)}
             sub={quarterlySummary.bestLabel ?? "-"}
           />
-          <SummaryCard
+          <SummaryItem
             label="Worst Avg"
             value={formatPercentSigned(quarterlySummary.worstValue)}
             sub={quarterlySummary.worstLabel ?? "-"}
           />
-          <SummaryCard
+          <SummaryItem
             label="Q Win Rate"
             value={
               quarterlySummary.winRatePercent !== null
@@ -138,17 +138,17 @@ export function SeasonalityTab({ data }: { data: ChartData }) {
           />
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3">
-          <SummaryCard
+          <SummaryItem
             label="Best Avg"
             value={formatPercentSigned(monthlySummary.bestValue)}
             sub={monthlySummary.bestLabel ?? "-"}
           />
-          <SummaryCard
+          <SummaryItem
             label="Worst Avg"
             value={formatPercentSigned(monthlySummary.worstValue)}
             sub={monthlySummary.worstLabel ?? "-"}
           />
-          <SummaryCard
+          <SummaryItem
             label="M Win Rate"
             value={
               monthlySummary.winRatePercent !== null
@@ -158,15 +158,15 @@ export function SeasonalityTab({ data }: { data: ChartData }) {
             sub={monthlySummary.winRateFraction ?? "-"}
           />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Quarterly Returns">
+      <Section title="Quarterly Returns">
         <ReturnsTable table={quarterly} />
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Monthly Returns">
+      <Section title="Monthly Returns">
         <ReturnsTable table={monthly} />
-      </SectionCard>
+      </Section>
 
       <p className="px-1 text-xs text-muted">
         Dihitung dari data harga historis harian (hingga 10 tahun terakhir).

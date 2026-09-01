@@ -1,7 +1,7 @@
 import { redis } from "@/lib/redis/redis";
 
 const IDX_INDEX_SUMMARY_API =
-  "https://www.idx.id/primary/TradingSummary/GetIndexSummary";
+  "https://www.idx.co.id/primary/TradingSummary/GetIndexSummary";
 
 const SECTOR_CODES = new Set([
   "IDXENERGY",
@@ -39,7 +39,7 @@ export async function fetchAndCacheIndexSummary(): Promise<IndexSummaryPayload> 
   const res = await fetch(`${IDX_INDEX_SUMMARY_API}?length=9999&start=0`, {
     headers: {
       Accept: "application/json",
-      Referer: "https://www.idx.id/",
+      Referer: "https://www.idx.co.id/",
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
     },
     cache: "no-store",

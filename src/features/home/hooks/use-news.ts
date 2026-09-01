@@ -1,52 +1,56 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { NewsItem } from "@/features/home/types";
 
-export type NewsItem = {
-  title: string;
-  link: string;
-  pubDate: string;
-  description?: string;
-  source?: string;
-  imageUrl?: string;
-};
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 menit
 
-/** Hook client untuk membaca berita dari /api/news (RSS ekonomi/pasar). */
 export function useNews() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<NewsItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/news", { cache: "no-store" });
+      setIsLoading(true);
+      setError(null);
 
-      if (!res.ok) {
-        throw new Error("Gagal memuat berita");
+      const res = await fetch("/api/news", { signal, cache: "no-store" });
+      if (!res.ok) throw new Error("Gagal mengambil berita.");
+      const json = await res.json();
+
+      if (!signal?.aborted) {
+        setItems(Array.isArray(json.items) ? json.items : []);
       }
-
-      const data = (await res.json()) as NewsItem[] | { error: string };
-      setNews(Array.isArray(data) ? data : []);
-    } catch (fetchError) {
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : "Terjadi kesalahan saat memuat berita",
-      );
-      setNews([]);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError("Berita belum tersedia.");
+      }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    Promise.resolve().then(() => load());
-    const interval = setInterval(load, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    const controller = new AbortController();
+    Promise.resolve().then(() => load(controller.signal));
+
+    const interval = window.setInterval(() => {
+      void load();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+    };
   }, [load]);
 
-  return { news, loading, error, reload: load } as const;
+  return {
+    items,
+    isLoading,
+    error,
+    reload: () => void load(),
+  } as const;
 }

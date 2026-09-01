@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { ExploreCategory } from "@/features/explore/types";
-import { fetchExploreApi } from "@/features/explore/services/explore-api";
+import { getExploreCategories } from "@/features/explore/services/explore.service";
 
 export function useExplore() {
   const [categories, setCategories] = useState<ExploreCategory[]>([]);
@@ -14,7 +14,7 @@ export function useExplore() {
       setIsLoading(true);
       setError(null);
 
-      const data = await fetchExploreApi(signal);
+      const data = await getExploreCategories(signal);
       if (Array.isArray(data) && data.length > 0) {
         setCategories(data);
       }

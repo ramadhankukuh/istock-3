@@ -19,7 +19,7 @@ export function StatItem({ label, value, valueClassName, hint }: Props) {
   );
 }
 
-export function SectionCard({
+export function Section({
   title,
   action,
   children,
@@ -31,12 +31,7 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-(--shadow-soft) sm:p-6",
-        className,
-      )}
-    >
+    <section className={className}>
       {(title || action) && (
         <div className="mb-4 flex items-center justify-between gap-3">
           {title && (
@@ -48,6 +43,6 @@ export function SectionCard({
         </div>
       )}
       {children}
-    </div>
+    </section>
   );
 }

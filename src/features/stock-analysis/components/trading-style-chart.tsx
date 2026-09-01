@@ -2,12 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AreaSeries,
   CandlestickSeries,
   ColorType,
-  LineSeries,
+  LineStyle,
   createChart,
 } from "lightweight-charts";
+import type {
+  IPriceLine,
+  ISeriesApi,
+  UTCTimestamp,
+} from "lightweight-charts";
 import type { CandlePoint } from "@/features/stock-analysis/types";
+import type { TradeSetup } from "@/features/swing-screener/types";
+import type { ChartRange, ChartStyle } from "@/features/chart/types";
 import { formatNumber } from "@/features/stock-analysis/utils";
 
 function formatHoverDate(time: unknown) {
@@ -49,21 +57,129 @@ function formatHoverDate(time: unknown) {
   return "-";
 }
 
+/** Format timestamp (detik UTC) sebagai jam "HH:mm" — dipakai untuk intraday. */
+function formatUTCClock(time: number): string {
+  const date = new Date(time * 1000);
+  return `${String(date.getUTCHours()).padStart(2, "0")}:${String(
+    date.getUTCMinutes(),
+  ).padStart(2, "0")}`;
+}
+
+const UTC_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+/** Format timestamp (detik UTC) sebagai "DD MMM HH:mm" — dipakai hourly 1W. */
+function formatUTCStamp(time: number): string {
+  const date = new Date(time * 1000);
+  return `${String(date.getUTCDate()).padStart(2, "0")} ${
+    UTC_MONTHS[date.getUTCMonth()]
+  } ${String(date.getUTCHours()).padStart(2, "0")}:${String(
+    date.getUTCMinutes(),
+  ).padStart(2, "0")}`;
+}
+
+/**
+ * Parse string waktu WIB → timestamp UTC (detik).
+ * Dukung "YYYY-MM-DD HH:mm" (hourly) atau "HH:mm" + `dateStr` (intraday).
+ */
+function toTimestamp(timeStr: string, dateStr?: string): number {
+  const full = timeStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+  if (full) {
+    const [, y, m, d, hh, mm] = full.map(Number);
+    return Date.UTC(y, m - 1, d, hh, mm) / 1000;
+  }
+  const [hh, mm] = timeStr.split(":").map(Number);
+  const [y, mo, d] = (dateStr ?? "").split("-").map(Number);
+  const year = y || new Date().getFullYear();
+  const month = (mo || new Date().getMonth() + 1) - 1;
+  const day = d || new Date().getDate();
+  return Date.UTC(year, month, day, hh || 0, mm || 0) / 1000;
+}
+
+/**
+ * Filter candle harian berdasarkan rentang aktif. `1D` return [] — range 1D
+ * pakai data intraday (15 menit), bukan candle harian.
+ */
+function getVisibleCandles(
+  candles: CandlePoint[],
+  range: ChartRange,
+): CandlePoint[] {
+  if (range === "1D") return [];
+  const days: Partial<Record<ChartRange, number | null>> = {
+    "1W": 7,
+    "1M": 30,
+    "3M": 90,
+    YTD: null,
+    "1Y": 365,
+    "3Y": 365 * 3,
+    "5Y": 365 * 5,
+  };
+  const rangeDays = days[range];
+  const cutoff =
+    range === "YTD"
+      ? new Date(new Date().getFullYear(), 0, 1)
+      : new Date(Date.now() - (rangeDays ?? 365) * 86_400_000);
+  return candles.filter((c) => new Date(c.time) >= cutoff);
+}
+
 type Props = {
   candles: CandlePoint[];
   dark: boolean;
-};
-
-export default function TradingStyleChart({ candles, dark }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [hoverData, setHoverData] = useState<{
-    date: string;
+  range?: ChartRange;
+  style?: ChartStyle;
+  /** Titik intraday 15 menit — dipakai kalau range === "1D". */
+  intraday?: { time: string; price: number }[];
+  /** Tanggal sesi intraday ("YYYY-MM-DD") — wajib saat intraday terisi. */
+  intradayDate?: string | null;
+  /** Candle 1 jam (OHLC) 7 hari — dipakai kalau range === "1W". */
+  hourly?: {
+    time: string;
     open: number;
     high: number;
     low: number;
     close: number;
-    ma20: number | null;
-    ma50: number | null;
+  }[];
+  previousClose?: number | null;
+  tradeSetup?: TradeSetup | null;
+};
+
+export default function TradingStyleChart({
+  candles,
+  dark,
+  range,
+  style,
+  intraday,
+  intradayDate,
+  hourly,
+  previousClose,
+  tradeSetup,
+}: Props) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [zone, setZone] = useState<{
+    top: number;
+    height: number;
+    stop: number;
+  } | null>(null);
+  const [hoverData, setHoverData] = useState<{
+    date: string;
+    open?: number;
+    high?: number;
+    low?: number;
+    close?: number;
+    value?: number;
   } | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{
     x: number;
@@ -74,9 +190,9 @@ export default function TradingStyleChart({ candles, dark }: Props) {
     if (!hoverPosition) return null;
 
     const containerWidth = containerRef.current?.clientWidth ?? 0;
-    const containerHeight = containerRef.current?.clientHeight ?? 520;
+    const containerHeight = containerRef.current?.clientHeight ?? 400;
     const tooltipWidth = 180;
-    const tooltipHeight = 128;
+    const tooltipHeight = 108;
     const gap = 12;
 
     let left = hoverPosition.x + gap;
@@ -112,7 +228,7 @@ export default function TradingStyleChart({ candles, dark }: Props) {
       },
 
       width: containerRef.current.clientWidth,
-      height: 520,
+      height: 400,
 
       rightPriceScale: {
         borderVisible: false,
@@ -126,7 +242,9 @@ export default function TradingStyleChart({ candles, dark }: Props) {
         borderVisible: false,
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 8,
+        // rightOffset 0 → setelah fitContent(), candle memenuhi seluruh lebar
+        // chart sampai tepi kanan (tidak ada gap kosong untuk range pendek).
+        rightOffset: 0,
         barSpacing: 8,
         fixLeftEdge: true,
         lockVisibleTimeRangeOnResize: true,
@@ -176,77 +294,196 @@ export default function TradingStyleChart({ candles, dark }: Props) {
       },
     });
 
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
-      borderUpColor: "#22c55e",
-      borderDownColor: "#ef4444",
-    });
+    // ── Siapkan data berdasarkan range & style aktif ──
+    const activeRange = range ?? "1Y";
+    const activeStyle = style ?? "candle";
+    const intradayPoints = activeRange === "1D" ? (intraday ?? []) : [];
+    const hourlyPoints = activeRange === "1W" ? (hourly ?? []) : [];
+    const useIntraday = intradayPoints.length > 0;
+    const useHourly = hourlyPoints.length > 0;
+    // Range 1D tidak punya OHLC (hanya price 15 menit) → paksa line mode.
+    const effectiveStyle = activeRange === "1D" ? "line" : activeStyle;
 
-    // ambil tanggal 1 tahun lalu
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    // Fallback 1D tanpa intraday (mis. fetch gagal): tampilkan ~30 candle
+    // harian terakhir supaya chart tidak kosong.
+    const dailyForChart =
+      activeRange === "1D" && !useIntraday
+        ? candles.filter(
+            (c) =>
+              new Date(c.time) >= new Date(Date.now() - 30 * 86_400_000),
+          )
+        : getVisibleCandles(candles, activeRange);
 
-    // filter hanya 1 tahun terakhir
-    const filteredCandles = candles.filter((c) => {
-      const d = new Date(c.time);
-      return d >= oneYearAgo;
-    });
+    const seriesData = useHourly
+      ? hourlyPoints.map((p) => {
+          const time = toTimestamp(p.time) as UTCTimestamp;
+          return effectiveStyle === "candle"
+            ? {
+                time,
+                open: p.open,
+                high: p.high,
+                low: p.low,
+                close: p.close,
+              }
+            : { time, value: p.close };
+        })
+      : useIntraday
+        ? intradayPoints.map((p) => ({
+            // WIB wall-clock dikonversi ke timestamp UTC supaya label "HH:mm"
+            // selalu tampil benar (lihat localization.timeFormatter di bawah).
+            time: toTimestamp(
+              p.time,
+              intradayDate ?? undefined,
+            ) as UTCTimestamp,
+            value: p.price,
+          }))
+        : effectiveStyle === "candle"
+          ? dailyForChart.map((item) => ({
+              time: item.time,
+              open: item.open,
+              high: item.high,
+              low: item.low,
+              close: item.close,
+            }))
+          : dailyForChart.map((item) => ({
+              time: item.time,
+              value: item.close,
+            }));
 
-    candlestickSeries.setData(
-      filteredCandles.map((item) => ({
-        time: item.time,
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        close: item.close,
-      })),
-    );
+    let mainSeries: ISeriesApi<"Candlestick" | "Area">;
+    let isCandle = false;
 
-    const calculateSma = (source: CandlePoint[], period: number) => {
-      const points: { time: string; value: number }[] = [];
-      let rollingSum = 0;
+    if (useIntraday || effectiveStyle === "line") {
+      mainSeries = chart.addSeries(AreaSeries, {
+        lineColor: "#22c55e",
+        topColor: dark ? "rgba(34,197,94,0.28)" : "rgba(34,197,94,0.22)",
+        bottomColor: "rgba(34,197,94,0.02)",
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: true,
+      });
+    } else {
+      isCandle = true;
+      mainSeries = chart.addSeries(CandlestickSeries, {
+        upColor: "#22c55e",
+        downColor: "#ef4444",
+        wickUpColor: "#22c55e",
+        wickDownColor: "#ef4444",
+        borderUpColor: "#22c55e",
+        borderDownColor: "#ef4444",
+      });
+    }
 
-      for (let index = 0; index < source.length; index += 1) {
-        rollingSum += source[index].close;
+    mainSeries.setData(seriesData as any);
 
-        if (index >= period) {
-          rollingSum -= source[index - period].close;
-        }
+    // Intraday (1D) & hourly (1W): label sumbu waktu diformat dari timestamp
+    // UTC (independen dari timezone browser). 1D → "HH:mm", 1W → "DD MMM HH:mm".
+    if (useIntraday || useHourly) {
+      chart.applyOptions({
+        localization: {
+          timeFormatter: (time: UTCTimestamp) =>
+            useHourly
+              ? formatUTCStamp(Number(time))
+              : formatUTCClock(Number(time)),
+        },
+        timeScale: {
+          tickMarkFormatter: (time: UTCTimestamp) =>
+            useHourly
+              ? formatUTCStamp(Number(time))
+              : formatUTCClock(Number(time)),
+        },
+      });
+    }
 
-        if (index >= period - 1) {
-          points.push({
-            time: source[index].time,
-            value: rollingSum / period,
-          });
-        }
+    // ── Garis harga BOW/TP1/TP2/SL via native createPriceLine (garis solid
+    //    membentang penuh + label harga otomatis di axis kanan, tanpa teks title) ──
+    const priceLines: IPriceLine[] = [];
+
+    if (tradeSetup && isCandle) {
+      const { buyOnWeakness, tp1, tp2, sl } = tradeSetup;
+
+      priceLines.push(
+        mainSeries.createPriceLine({
+          price: buyOnWeakness,
+          color: dark ? "#e5e7eb" : "#111827",
+          lineWidth: 1,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+        }),
+      );
+      priceLines.push(
+        mainSeries.createPriceLine({
+          price: tp1,
+          color: "#14b8a6",
+          lineWidth: 1,
+          lineStyle: tp2 != null ? LineStyle.Dashed : LineStyle.Solid,
+          axisLabelVisible: true,
+        }),
+      );
+      if (tp2 != null) {
+        priceLines.push(
+          mainSeries.createPriceLine({
+            price: tp2,
+            color: "#0d9488",
+            lineWidth: 1,
+            lineStyle: LineStyle.Solid,
+            axisLabelVisible: true,
+          }),
+        );
+      }
+      priceLines.push(
+        mainSeries.createPriceLine({
+          price: sl,
+          color: "#ef4444",
+          lineWidth: 1,
+          lineStyle: LineStyle.Solid,
+          axisLabelVisible: true,
+        }),
+      );
+    }
+
+    // ── Previous close reference line (garis putus-putus) — hanya range 1D ──
+    if (activeRange === "1D" && previousClose != null) {
+      priceLines.push(
+        mainSeries.createPriceLine({
+          price: previousClose,
+          color: "#94a3b8",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+        }),
+      );
+    }
+
+    // ── Blok zona teal(atas)/pink(bawah) dari SL sampai TP, terbagi persis di
+    //    garis entry (BOW). Koordinat piksel TIDAK dibaca langsung setelah
+    //    setData() — price scale auto-range baru settle di render pass
+    //    berikutnya (async), jadi `computeZone` dipanggil via rAF setelah
+    //    fitContent() dan dihitung ulang tiap resize / pan / zoom. ──
+    const computeZone = () => {
+      if (!tradeSetup || !isCandle) {
+        setZone(null);
+        return;
       }
 
-      return points;
+      const yTpTop = mainSeries.priceToCoordinate(
+        tradeSetup.tp2 ?? tradeSetup.tp1,
+      );
+      const yBow = mainSeries.priceToCoordinate(
+        tradeSetup.buyOnWeakness,
+      );
+      const ySl = mainSeries.priceToCoordinate(tradeSetup.sl);
+
+      if (yTpTop != null && yBow != null && ySl != null) {
+        setZone({
+          top: Math.min(yTpTop, ySl),
+          height: Math.abs(ySl - yTpTop),
+          stop: (yBow - yTpTop) / (ySl - yTpTop),
+        });
+      } else {
+        setZone(null);
+      }
     };
-
-    const ma20Series = chart.addSeries(LineSeries, {
-      title: "MA20",
-      color: dark ? "#818cf8" : "#4f46e5",
-      lineWidth: 2,
-      crosshairMarkerVisible: false,
-      priceLineVisible: true,
-      lastValueVisible: true,
-    });
-
-    const ma50Series = chart.addSeries(LineSeries, {
-      title: "MA50",
-      color: dark ? "#fbbf24" : "#d97706",
-      lineWidth: 2,
-      crosshairMarkerVisible: false,
-      priceLineVisible: true,
-      lastValueVisible: true,
-    });
-
-    ma20Series.setData(calculateSma(filteredCandles, 20));
-    ma50Series.setData(calculateSma(filteredCandles, 50));
 
     const updateHoverFromParam = (param: any, clearWhenInvalid = true) => {
       if (
@@ -262,8 +499,12 @@ export default function TradingStyleChart({ candles, dark }: Props) {
         return;
       }
 
-      const candle = param.seriesData?.get(candlestickSeries);
-      if (!candle) {
+      const point = param.seriesData?.get(mainSeries) as
+        | { value?: number }
+        | { open?: number; high?: number; low?: number; close?: number }
+        | undefined;
+
+      if (!point) {
         if (clearWhenInvalid) {
           setHoverData(null);
           setHoverPosition(null);
@@ -271,21 +512,40 @@ export default function TradingStyleChart({ candles, dark }: Props) {
         return;
       }
 
-      setHoverData({
-        date: formatHoverDate(param.time),
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-        ma20:
-          param.seriesData?.get(ma20Series)?.value !== undefined
-            ? param.seriesData.get(ma20Series).value
-            : null,
-        ma50:
-          param.seriesData?.get(ma50Series)?.value !== undefined
-            ? param.seriesData.get(ma50Series).value
-            : null,
-      });
+      if (typeof (point as { value?: number }).value === "number") {
+        const value = (point as { value: number }).value;
+        setHoverData({
+          date: useHourly
+            ? formatUTCStamp(param.time as number)
+            : useIntraday
+              ? formatUTCClock(param.time as number)
+              : formatHoverDate(param.time),
+          value,
+        });
+      } else {
+        const candle = point as {
+          open: number;
+          high: number;
+          low: number;
+          close: number;
+        };
+        if (typeof candle.open !== "number") {
+          if (clearWhenInvalid) {
+            setHoverData(null);
+            setHoverPosition(null);
+          }
+          return;
+        }
+        setHoverData({
+          date: useHourly
+            ? formatUTCStamp(param.time as number)
+            : formatHoverDate(param.time),
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+        });
+      }
 
       const snappedX = chart.timeScale().timeToCoordinate(param.time);
 
@@ -308,49 +568,60 @@ export default function TradingStyleChart({ candles, dark }: Props) {
 
     chart.timeScale().fitContent();
 
+    // Double rAF: rAF pertama nunggu browser paint, rAF kedua mastiin
+    // lightweight-charts udah selesai recompute auto-scale price range —
+    // baru baca koordinat piksel zone (fix box nongol di luar range candle).
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        computeZone();
+      });
+    });
+
+    setContainerWidth(containerRef.current.clientWidth);
+
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
       chart.applyOptions({ width: entry.contentRect.width });
+      setContainerWidth(entry.contentRect.width);
+      requestAnimationFrame(() => computeZone());
     });
 
     resizeObserver.observe(containerRef.current);
 
+    // Recompute zone saat user pan/zoom biar blok tetap nempel di garis
+    // BOW/TP/SL (posisi vertikal bisa berubah saat price scale berubah).
+    const handleVisibleRangeChange = () => {
+      requestAnimationFrame(() => computeZone());
+    };
+    chart.timeScale().subscribeVisibleLogicalRangeChange(
+      handleVisibleRangeChange,
+    );
+
     return () => {
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(
+        handleVisibleRangeChange,
+      );
+      priceLines.forEach((line) => mainSeries.removePriceLine(line));
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
       chart.unsubscribeClick(handleChartClick);
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [candles, dark]);
+  }, [
+    candles,
+    dark,
+    range,
+    style,
+    intraday,
+    intradayDate,
+    hourly,
+    previousClose,
+    tradeSetup,
+  ]);
 
   return (
-    <div className="relative h-130 w-full overflow-hidden rounded-xl">
-      <div className="pointer-events-none absolute left-3 top-3 z-6 flex items-center gap-3 text-[11px] font-medium">
-        <span
-          className={`inline-flex items-center gap-1 ${
-            dark ? "text-indigo-300" : "text-indigo-700"
-          }`}
-        >
-          <span
-            className="inline-block h-0.5 w-4 rounded-full"
-            style={{ backgroundColor: dark ? "#818cf8" : "#4f46e5" }}
-          />
-          MA20
-        </span>
-        <span
-          className={`inline-flex items-center gap-1 ${
-            dark ? "text-amber-300" : "text-amber-700"
-          }`}
-        >
-          <span
-            className="inline-block h-0.5 w-4 rounded-full"
-            style={{ backgroundColor: dark ? "#fbbf24" : "#d97706" }}
-          />
-          MA50
-        </span>
-      </div>
-
+    <div className="relative h-100 w-full overflow-hidden rounded-xl">
       {hoverPosition && (
         <div
           className="pointer-events-none absolute bottom-0 top-0 z-5"
@@ -382,46 +653,67 @@ export default function TradingStyleChart({ candles, dark }: Props) {
             </span>{" "}
             {hoverData.date}
           </p>
-          <p>
-            <span className={dark ? "text-gray-400" : "text-gray-500"}>
-              Open:
-            </span>{" "}
-            {formatNumber(hoverData.open)}
-          </p>
-          <p>
-            <span className={dark ? "text-gray-400" : "text-gray-500"}>
-              High:
-            </span>{" "}
-            {formatNumber(hoverData.high)}
-          </p>
-          <p>
-            <span className={dark ? "text-gray-400" : "text-gray-500"}>
-              Low:
-            </span>{" "}
-            {formatNumber(hoverData.low)}
-          </p>
-          <p>
-            <span className={dark ? "text-gray-400" : "text-gray-500"}>
-              Close:
-            </span>{" "}
-            {formatNumber(hoverData.close)}
-          </p>
-          <p>
-            <span className={dark ? "text-indigo-300" : "text-indigo-700"}>
-              MA20:
-            </span>{" "}
-            {formatNumber(hoverData.ma20)}
-          </p>
-          <p>
-            <span className={dark ? "text-amber-300" : "text-amber-700"}>
-              MA50:
-            </span>{" "}
-            {formatNumber(hoverData.ma50)}
-          </p>
+          {hoverData.value != null ? (
+            <p>
+              <span className={dark ? "text-gray-400" : "text-gray-500"}>
+                Harga:
+              </span>{" "}
+              {formatNumber(hoverData.value)}
+            </p>
+          ) : (
+            <>
+              <p>
+                <span className={dark ? "text-gray-400" : "text-gray-500"}>
+                  Open:
+                </span>{" "}
+                {formatNumber(hoverData.open ?? null)}
+              </p>
+              <p>
+                <span className={dark ? "text-gray-400" : "text-gray-500"}>
+                  High:
+                </span>{" "}
+                {formatNumber(hoverData.high ?? null)}
+              </p>
+              <p>
+                <span className={dark ? "text-gray-400" : "text-gray-500"}>
+                  Low:
+                </span>{" "}
+                {formatNumber(hoverData.low ?? null)}
+              </p>
+              <p>
+                <span className={dark ? "text-gray-400" : "text-gray-500"}>
+                  Close:
+                </span>{" "}
+                {formatNumber(hoverData.close ?? null)}
+              </p>
+            </>
+          )}
         </div>
       )}
+      {zone && containerWidth > 0 && (
+        <div
+          className="pointer-events-none absolute z-4"
+          style={{
+            // Blok mulai dari ~70% lebar chart ke kanan (area kosong di sisi kanan candle terakhir)
+            left: containerWidth * 0.7,
+            width: containerWidth - containerWidth * 0.7 - 8,
+            top: zone.top,
+            height: zone.height,
+            // SATU box solid dari SL sampai TP, dibagi dua warna persis di
+            // garis BOW — bukan dua div dengan jarak/gap di antaranya.
+            background: `linear-gradient(
+              to bottom,
+              rgba(20, 184, 166, 0.18) 0%,
+              rgba(20, 184, 166, 0.18) ${zone.stop * 100}%,
+              rgba(239, 68, 68, 0.14) ${zone.stop * 100}%,
+              rgba(239, 68, 68, 0.14) 100%
+            )`,
+          }}
+        />
+      )}
+
       <div
-        className="h-130 w-full overflow-hidden rounded-xl"
+        className="h-100 w-full overflow-hidden rounded-xl"
         ref={containerRef}
       />
     </div>

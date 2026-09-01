@@ -64,8 +64,17 @@ export async function fetchChartData(rawSymbol: string): Promise<ChartData> {
   const shortCode = symbol.replace(/\.JK$/i, "");
 
   const [quoteSummary, quote] = await Promise.all([
-    yahooFinance.quoteSummary(symbol, { modules: MODULES as any } as any) as any,
-    yahooFinance.quote(symbol) as any,
+    // validateResult:false — Yahoo kadang mengubah bentuk data sehingga validasi
+    // bawaan library melempar "Failed Yahoo Schema validation"; data tetap
+    // diproses aman lewat guard null di bawah.
+    yahooFinance.quoteSummary(
+      symbol,
+      { modules: MODULES as any } as any,
+      { validateResult: false } as any,
+    ) as any,
+    yahooFinance.quote(symbol, undefined as any, {
+      validateResult: false,
+    } as any) as any,
   ]);
 
   const endDate = new Date();
@@ -76,12 +85,16 @@ export async function fetchChartData(rawSymbol: string): Promise<ChartData> {
   // has SOME (but not all) null OHLCV values — common on IDX halted / no-volume
   // days (e.g. BBCA). chart() returns the raw quotes including nulls, which we
   // filter out below for candles and seasonality.
-  const chartResult = await yahooFinance.chart(symbol, {
-    period1: startDate,
-    period2: endDate,
-    interval: "1d",
-    return: "array",
-  });
+  const chartResult = await yahooFinance.chart(
+    symbol,
+    {
+      period1: startDate,
+      period2: endDate,
+      interval: "1d",
+      return: "array",
+    },
+    { validateResult: false } as any,
+  );
   const history = chartResult.quotes;
 
   const candles = history
@@ -234,6 +247,8 @@ export async function fetchChartData(rawSymbol: string): Promise<ChartData> {
       investorRelationsUrl: assetProfile.website ?? null,
       longBusinessSummary: assetProfile.longBusinessSummary ?? null,
       officers,
+      // Belum ada sumber data nyata untuk tag tambahan (Syariah/Day Trade).
+      tags: [],
     },
     quote: {
       price: lastPrice,

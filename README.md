@@ -18,20 +18,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## Environment Variables
-
-Daftar env var yang dipakai project (lihat `src/lib/env.ts`):
-
-| Variable | Wajib | Keterangan |
-| --- | --- | --- |
-| `UPSTASH_REDIS_REST_URL` | Ya | URL REST Upstash Redis (cache index summary, stock summary, konglo, net foreign, swing screener) |
-| `UPSTASH_REDIS_REST_TOKEN` | Ya | Token REST Upstash Redis |
-| `TURSO_DATABASE_URL` | Ya | URL database Turso (kandles swing screener) |
-| `TURSO_AUTH_TOKEN` | Ya | Token Turso |
-| `CRON_SECRET` | **Ya** | Secret untuk mengamankan `/api/cron/swing-screener` via header `Authorization: Bearer <CRON_SECRET>`. **WAJIB di-set di environment Vercel sebelum deploy** — kalau kosong, endpoint cron selalu menolak request dengan 401 (fail-closed). |
-| `AUTH_SECRET` | Ya | Secret untuk NextAuth |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Ya | OAuth Google login |
-
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

@@ -1,7 +1,7 @@
 import { redis } from "@/lib/redis/redis";
 
 const IDX_STOCK_SUMMARY_API =
-  "https://www.idx.id/primary/TradingSummary/GetStockSummary";
+  "https://www.idx.co.id/primary/TradingSummary/GetStockSummary";
 const CACHE_KEY = "netForeign";
 const MAX_DAYS = 30;
 
@@ -54,7 +54,7 @@ async function fetchNetForeignForDate(
     const res = await fetch(url, {
       headers: {
         Accept: "application/json",
-        Referer: "https://www.idx.id/",
+        Referer: "https://www.idx.co.id/",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       },
       cache: "no-store",

@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionCard, StatItem } from "@/features/chart/components/stat-item";
+import { Section, StatItem } from "@/features/chart/components/stat-item";
 import type { ChartData } from "@/features/chart/types";
 import {
   formatCompactNumber,
@@ -70,7 +70,7 @@ export function AnalysisTab({ data }: { data: ChartData }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Analyst Rating">
+      <Section title="Analyst Rating">
         <p className="mb-4 text-xs text-muted">
           Based on {analystSummary.numberOfAnalystOpinions ?? "-"} analysts
         </p>
@@ -115,20 +115,20 @@ export function AnalysisTab({ data }: { data: ChartData }) {
             })}
           </div>
         )}
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Price Target">
+      <Section title="Price Target">
         <p className="mb-3 text-xs text-muted">
           Analyst price forecast for {data.symbol}.JK
         </p>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-xl bg-red-500/10 p-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase text-red-500">Low</p>
             <p className="text-lg font-bold text-foreground">
               {formatNumber(analystSummary.targetLow, 0)}
             </p>
           </div>
-          <div className="rounded-xl bg-emerald-500/10 p-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase text-emerald-600">
               Average
             </p>
@@ -139,7 +139,7 @@ export function AnalysisTab({ data }: { data: ChartData }) {
               {formatPercentSigned(upsidePercent)}
             </p>
           </div>
-          <div className="rounded-xl bg-emerald-500/10 p-3">
+          <div>
             <p className="text-[10px] font-semibold uppercase text-emerald-600">
               High
             </p>
@@ -167,10 +167,10 @@ export function AnalysisTab({ data }: { data: ChartData }) {
           <span>Current: {formatNumber(data.quote.price, 0)} IDR</span>
           <span>Target: {formatNumber(analystSummary.targetMean, 0)} IDR</span>
         </div>
-      </SectionCard>
+      </Section>
 
       {consensusEstimates.length > 0 && (
-        <SectionCard title="Consensus Estimates">
+        <Section title="Consensus Estimates">
           <p className="mb-3 text-xs text-muted">
             Revenue and earnings projections
           </p>
@@ -187,11 +187,11 @@ export function AnalysisTab({ data }: { data: ChartData }) {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </Section>
       )}
 
       {analystSummary.trend.length > 0 && (
-        <SectionCard title="Recommendation Trend History">
+        <Section title="Recommendation Trend History">
           <p className="mb-3 text-xs text-muted">
             Monthly shift in analyst stance
           </p>
@@ -229,10 +229,10 @@ export function AnalysisTab({ data }: { data: ChartData }) {
               </div>
             ))}
           </div>
-        </SectionCard>
+        </Section>
       )}
 
-      <SectionCard title="Earnings Event Window">
+      <Section title="Earnings Event Window">
         <p className="mb-3 text-xs text-muted">
           Upcoming earnings and call schedule from Yahoo feed
         </p>
@@ -254,7 +254,7 @@ export function AnalysisTab({ data }: { data: ChartData }) {
             value={formatDateShort(data.calendar.earningsCallEnd)}
           />
         </div>
-      </SectionCard>
+      </Section>
     </div>
   );
 }

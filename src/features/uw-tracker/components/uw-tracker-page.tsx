@@ -3,8 +3,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Trophy, Handshake, Flame, Users, TrendingUp, ArrowUpCircle, ArrowDownCircle, LayoutGrid, List, AlertCircle } from "lucide-react";
 import ToolHeaderCard from "@/components/ui/tool-header-card";
 import { Accordion } from "@/components/ui/accordion";
-import uwList from "@/lib/data/list-uw.json";
-import detailIPO from "@/lib/data/detail-ipo.json";
+import uwList from "@/lib/data/listUW.json";
+import detailIPO from "@/lib/data/detailIPO.json";
 
 interface IPO {
   UW: string;

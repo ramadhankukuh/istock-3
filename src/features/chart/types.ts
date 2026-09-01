@@ -75,6 +75,12 @@ export type ChartData = {
     investorRelationsUrl: string | null;
     longBusinessSummary: string | null;
     officers: CompanyOfficer[];
+    /**
+     * Tag tambahan (mis. "Syariah", "Day Trade"). Kosong untuk sekarang —
+     * belum ada sumber data nyata. Saat data tersedia, isi di service dan
+     * render dengan `.map()` di PriceHeader.
+     */
+    tags: string[];
   };
   quote: {
     price: number | null;
@@ -174,4 +180,48 @@ export type ChartData = {
   };
   candles: CandlePoint[];
   error?: string;
+};
+
+/** Rentang waktu aktif di chart / header harga. */
+export type ChartRange =
+  | "1D"
+  | "1W"
+  | "1M"
+  | "3M"
+  | "YTD"
+  | "1Y"
+  | "3Y"
+  | "5Y";
+
+/** Gaya render chart: garis atau candlestick. */
+export type ChartStyle = "line" | "candle";
+
+/** Satu titik intraday (interval 15 menit, WIB). */
+export type IntradayPoint = {
+  /** "HH:mm" WIB */
+  time: string;
+  price: number;
+};
+
+/** Response `GET /api/chart/intraday?symbol=...` */
+export type IntradayResponse = {
+  symbol: string; // short code, tanpa .JK
+  date: string; // "YYYY-MM-DD" tanggal sesi yang ditampilkan
+  points: IntradayPoint[];
+};
+
+/** Satu candle 1 jam (WIB) — untuk range 1W. */
+export type HourlyPoint = {
+  /** "YYYY-MM-DD HH:mm" WIB */
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
+/** Response `GET /api/chart/hourly?symbol=...` */
+export type HourlyResponse = {
+  symbol: string; // short code, tanpa .JK
+  points: HourlyPoint[];
 };

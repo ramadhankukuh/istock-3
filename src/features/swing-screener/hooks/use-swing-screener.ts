@@ -4,44 +4,45 @@ import { useCallback, useEffect, useState } from "react";
 import type { SwingScreenerPayload } from "../types";
 
 /**
- * Hook client untuk membaca hasil screener dari endpoint user
- * (/api/screener/swing) yang hanya membaca Redis — tanpa fetch IDX/Turso.
+ * Hook baca hasil Swing Trade Screener dari `/api/screener/swing`
+ * (endpoint cuma baca Redis — data diisi pipeline cron).
  */
 export function useSwingScreener() {
   const [payload, setPayload] = useState<SwingScreenerPayload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
+  const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/screener/swing", {
-        cache: "no-store",
-      });
+      setIsLoading(true);
+      setError(null);
 
-      if (!res.ok) {
-        throw new Error("Gagal mengambil data screener");
+      const res = await fetch("/api/screener/swing", { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = (await res.json()) as SwingScreenerPayload;
+      setPayload(data);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setError(
+          "Data screener belum tersedia. Jalankan update atau coba lagi nanti.",
+        );
       }
-
-      const json = (await res.json()) as SwingScreenerPayload;
-      setPayload(json);
-    } catch (fetchError) {
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : "Terjadi kesalahan saat memuat data",
-      );
-      setPayload(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    Promise.resolve().then(() => load(controller.signal));
+    return () => controller.abort();
   }, [load]);
 
-  return { payload, loading, error, reload: load } as const;
+  return {
+    payload,
+    isLoading,
+    error,
+    reload: () => void load(),
+  } as const;
 }

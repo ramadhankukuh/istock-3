@@ -1,75 +1,74 @@
-/** Candle harian hasil mapping dari response IDX Trading Summary. */
+/**
+ * Types untuk Swing Trade Screener.
+ *
+ * `tradeSetup` dihitung dari struktur support/resistance (pivot high/low pada
+ * histori candle) — terpisah dari indikator MA/RSI/MACD, tapi hasilnya ikut
+ * menentukan status lolos screening (`passed`).
+ */
+
+/** Candle harian IDX hasil normalisasi dari Yahoo Finance chart. */
 export type IdxCandle = {
-  ticker: string;
-  /** Tanggal trading, format YYYY-MM-DD. */
-  date: string;
-  open: number | null;
-  high: number | null;
-  low: number | null;
-  close: number | null;
-  volume: number | null;
-  value: number | null;
-  /** ForeignBuy - ForeignSell dalam rupiah. */
-  foreignNet: number | null;
+  time: string; // YYYY-MM-DD (ascending by date)
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 };
 
-export type MaState =
-  | "golden-cross"
-  | "death-cross"
-  | "above"
-  | "below"
-  | "none";
+/** Trade setup BOW/TP1/TP2/SL hasil `computeTradeSetup`. */
+export type TradeSetup = {
+  buyOnWeakness: number;
+  tp1: number;
+  tp1Pct: number;
+  tp2: number | null;
+  tp2Pct: number | null;
+  sl: number;
+  slPct: number;
+};
 
-/** Hasil analisis indikator teknikal + screening per ticker. */
+/** Enam sinyal kriteria lolos (skor 0-6). */
+export type SwingScreenerSignals = {
+  /** close > MA20 > MA50 */
+  maBullish: boolean;
+  /** MA20 golden cross MA50 dalam beberapa bar terakhir */
+  goldenCross: boolean;
+  /** RSI berada dalam rentang momentum (55-70) */
+  rsiMomentum: boolean;
+  /** MACD > signal line */
+  macdBullish: boolean;
+  /** volume hari ini >= volumeRatioMin × rata-rata 20 hari */
+  volumeBreakout: boolean;
+  /** akumulasi asing net positif dalam N hari terakhir */
+  foreignAccumulation: boolean;
+};
+
+/** Satu baris hasil screening. */
 export type SwingScreenerResult = {
   ticker: string;
-  /** Tanggal candle terakhir yang dipakai. */
-  date: string;
-  close: number | null;
-  /** Perubahan harga 1 hari (%) terhadap close sebelumnya. */
-  changePct: number | null;
-  volume: number | null;
-  avgVolume20: number | null;
-  /** volume / rata-rata volume 20 hari (breakout jika >= threshold). */
+  name: string | null;
+  sector: string | null;
+  price: number;
+  changePct: number;
+  volume: number;
   volumeRatio: number | null;
-  ma20: number | null;
-  ma50: number | null;
-  maState: MaState;
-  rsi14: number | null;
+  rsi: number | null;
   macd: number | null;
   macdSignal: number | null;
-  macdHistogram: number | null;
-  /** Akumulasi asing (foreign_net) 1 hari terakhir. */
-  foreignNet1d: number | null;
-  /** Akumulasi asing 5 hari terakhir. */
-  foreignNet5d: number | null;
-  /** Akumulasi asing 20 hari terakhir. */
-  foreignNet20d: number | null;
-  /** Jumlah signal yang terpenuhi (0-6). */
+  ma20: number | null;
+  ma50: number | null;
   score: number;
-  /** Label signal yang terpenuhi. */
-  signals: string[];
-  /** Lolos screening atau tidak. */
+  signals: SwingScreenerSignals;
+  /** Lolos penuh: sinyal terpenuhi DAN trade setup valid & berkualitas. */
   passed: boolean;
+  tradeSetup: TradeSetup | null;
 };
 
-/** Ringkasan yang ditulis ke Redis bersama hasil screening. */
-export type SwingScreenerSummary = {
-  fetched: number;
-  universeSize: number;
-  upserted: number;
-  trimmed: number;
-  screened: number;
-  passed: number;
-  failed: number;
-  durationMs: number;
-};
-
-/** Payload lengkap yang dibaca endpoint user dari Redis. */
+/** Payload yang dicache di Redis dan dibaca halaman /explore. */
 export type SwingScreenerPayload = {
-  available: boolean;
-  updatedAt: string | null;
-  message?: string;
+  lastUpdate: string;
+  lastUpdateFormatted: string;
+  total: number;
+  passedCount: number;
   results: SwingScreenerResult[];
-  summary: SwingScreenerSummary | null;
 };

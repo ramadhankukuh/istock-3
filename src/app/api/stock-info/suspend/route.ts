@@ -1,17 +1,60 @@
 import { NextResponse } from "next/server";
-import { fetchSuspendData } from "@/features/explore/services/idx-announcements.service";
 
 export const runtime = "nodejs";
+
+const IDX_SUSPEND_API = "https://www.idx.co.id/primary/Home/GetSuspendData";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const resultCount = searchParams.get("resultCount") ?? "20";
-    const type = searchParams.get("type") ?? undefined; // Suspend | Unsuspend
+    const type = searchParams.get("type"); // Suspend | Unsuspend | null
 
-    const payload = await fetchSuspendData(resultCount, type);
-    return NextResponse.json(payload);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const url = `${IDX_SUSPEND_API}?resultCount=${resultCount}`;
+
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        Referer: "https://www.idx.co.id/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error("Gagal fetch Suspend IDX");
+    }
+
+    const json = await res.json();
+
+    let items = (json.Results || []).map(
+      (x: {
+        Date?: string;
+        Kode?: string;
+        Judul?: string;
+        Info_Type?: string;
+        Data_Download?: string | null;
+      }) => ({
+        tanggal: x.Date,
+        kode: x.Kode,
+        judul: x.Judul,
+        tipe: x.Info_Type, // Suspend | Unsuspend
+        file: x.Data_Download ? `https://www.idx.co.id${x.Data_Download}` : null,
+      }),
+    );
+
+    if (type) {
+      items = items.filter(
+        (x: { tipe?: string }) => x.tipe?.toLowerCase() === type.toLowerCase(),
+      );
+    }
+
+    return NextResponse.json({
+      total: items.length,
+      items,
+    });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Terjadi kesalahan";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

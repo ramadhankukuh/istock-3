@@ -1,104 +1,152 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { Star } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import type { ChartData } from "@/features/chart/types";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { CandlePoint } from "@/features/stock-analysis/types";
+import type { ChartData, ChartRange } from "@/features/chart/types";
+import { StockLogo } from "@/features/chart/components/stock-logo";
+import { StockSearch } from "@/features/chart/components/stock-search";
 import {
+  RANGE_LABELS,
   formatDateTimeShort,
   formatIDR,
+  formatNumber,
   formatPercentSigned,
+  getRangeChange,
 } from "@/features/chart/utils";
 
 type Props = {
   symbol: string;
-  symbolInput: string;
-  setSymbolInput: (value: string) => void;
   onSubmitSymbol: (symbol: string) => void;
   data: ChartData | null;
   loading: boolean;
-  isPositive: boolean;
+  range: ChartRange;
+  candles: CandlePoint[];
 };
 
 export function PriceHeader({
   symbol,
-  symbolInput,
-  setSymbolInput,
   onSubmitSymbol,
   data,
   loading,
-  isPositive,
+  range,
+  candles,
 }: Props) {
-  const [starred, setStarred] = useState(false);
+  const price = data?.quote.price ?? null;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmitSymbol(symbolInput);
-  };
+  // Saat loading (awal muat / ganti simbol) tampilkan skeleton, supaya tidak
+  // menampilkan nama/harga dari simbol lama.
+  const showSkeleton = loading;
 
-  const changeColor = isPositive ? "text-emerald-500" : "text-red-500";
+  // Delta mengikuti range aktif: 1D pakai data quote, sisanya hitung dari
+  // candle awal range (getRangeChange).
+  const rangeChange =
+    range === "1D"
+      ? {
+          change: data?.quote.change ?? null,
+          changePercent: data?.quote.changePercent ?? null,
+        }
+      : getRangeChange(candles, price, range);
+
+  const isUp = (rangeChange.change ?? 0) >= 0;
+  const changeColor = isUp ? "text-emerald-500" : "text-red-500";
 
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface) p-5 shadow-(--shadow-soft) sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 space-y-3">
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <input
-              value={symbolInput}
-              onChange={(e) => setSymbolInput(e.target.value.toUpperCase())}
-              placeholder="BBRI"
-              maxLength={12}
-              className="w-32 rounded-lg border border-(--border) bg-(--surface-strong) px-3 py-1.5 text-xl font-bold uppercase tracking-tight text-foreground focus:outline-none focus:ring-2 focus:ring-(--ring) sm:text-2xl"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-(--foreground) px-3 py-1.5 text-xs font-semibold text-(--background) transition hover:opacity-90"
-            >
-              Go
-            </button>
-          </form>
+    <div className="space-y-3">
+      {/* Baris 1: pencarian saham (selalu placeholder, tanpa teks ticker) */}
+      <StockSearch onSubmit={onSubmitSymbol} />
 
+      {/* Baris 2: ticker + nama perusahaan (jadi satu, tidak terpisah) */}
+      <div>
+        <p className="text-2xl font-bold uppercase tracking-tight text-foreground sm:text-3xl">
+          {symbol}
+        </p>
+        {showSkeleton ? (
+          <Skeleton className="mt-1 h-4 w-52 sm:w-64" />
+        ) : (
           <p className="truncate text-sm text-muted">
-            {data?.profile.longName ?? (loading ? "Memuat…" : "-")}
+            {data?.profile.longName ?? "-"}
           </p>
+        )}
+      </div>
 
+      {/* Baris 3: harga + perubahan, logo sejajar di kanan */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="text-3xl font-bold tabular-nums text-foreground sm:text-4xl">
-              {formatIDR(data?.quote.price ?? null)}
-            </span>
-            <span className={cn("text-sm font-semibold tabular-nums", changeColor)}>
-              {formatPercentSigned(data?.quote.change ?? null, 2).replace(
-                "%",
-                "",
-              )}{" "}
-              ({formatPercentSigned(data?.quote.changePercent ?? null, 2)})
-            </span>
+            {showSkeleton ? (
+              <Skeleton className="h-10 w-40 sm:h-12 sm:w-48" />
+            ) : (
+              <span className="text-3xl font-bold tabular-nums text-foreground sm:text-4xl">
+                {formatIDR(price)}
+              </span>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span className="rounded-full border border-(--border) bg-(--surface-strong) px-2.5 py-1 font-medium uppercase tracking-wide">
-              {data?.quote.marketState ?? "-"}
-            </span>
-            <span>{formatDateTimeShort(data?.quote.regularMarketTime)}</span>
+          {/* Delta + label range aktif */}
+          <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold tabular-nums">
+            {showSkeleton ? (
+              <Skeleton className="h-4 w-36" />
+            ) : rangeChange.change !== null &&
+              rangeChange.changePercent !== null ? (
+              <>
+                {isUp ? (
+                  <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                )}
+                <span className={changeColor}>
+                  {formatNumber(Math.abs(rangeChange.change), 2)}{" "}
+                  {formatPercentSigned(rangeChange.changePercent, 2)}
+                </span>
+                <span className="font-medium text-muted">
+                  {RANGE_LABELS[range]}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted">-</span>
+            )}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setStarred((v) => !v)}
-            aria-label="Toggle watchlist"
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full border border-(--border) bg-(--surface-strong) transition hover:bg-(--surface)",
-              starred ? "text-amber-400" : "text-muted",
-            )}
-          >
-            <Star className="h-5 w-5" fill={starred ? "currentColor" : "none"} />
-          </button>
+        <div className="flex shrink-0 items-center">
+          {showSkeleton ? (
+            <Skeleton className="h-14 w-14 shrink-0 rounded-full" />
+          ) : (
+            <StockLogo symbol={symbol} size={56} />
+          )}
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-muted">Kode: {symbol}.JK</p>
+      {/* Baris 4: tag badges — sektor + market state + waktu */}
+      {showSkeleton ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          {data?.profile.sector ? (
+            <span className="rounded-full border border-(--border) bg-(--surface-strong) px-2.5 py-1 font-medium uppercase tracking-wide">
+              {data.profile.sector}
+            </span>
+          ) : null}
+          {data?.profile.tags?.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-(--border) bg-(--surface-strong) px-2.5 py-1 font-medium uppercase tracking-wide"
+            >
+              {tag}
+            </span>
+          ))}
+          <span className="rounded-full border border-(--border) bg-(--surface-strong) px-2.5 py-1 font-medium uppercase tracking-wide">
+            {data?.quote.marketState ?? "-"}
+          </span>
+          <span>{formatDateTimeShort(data?.quote.regularMarketTime)}</span>
+        </div>
+      )}
     </div>
   );
 }

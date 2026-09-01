@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SectionCard, StatItem } from "@/features/chart/components/stat-item";
+import { Section, StatItem } from "@/features/chart/components/stat-item";
 import type { ChartData } from "@/features/chart/types";
 import {
   formatCompactNumber,
@@ -53,7 +53,7 @@ export function KeystatsTab({ data }: { data: ChartData }) {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="Summary">
+      <Section title="Summary">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <StatItem label="Market Cap" value={formatCompactNumber(keyStats.marketCap) + " IDR"} />
           <StatItem label="P/E (TTM)" value={formatNumber(keyStats.peTTM)} />
@@ -96,9 +96,9 @@ export function KeystatsTab({ data }: { data: ChartData }) {
           <StatItem label="Previous Close" value={formatNumber(quote.previousClose)} />
           <StatItem label="Open" value={formatNumber(quote.open)} />
         </div>
-      </SectionCard>
+      </Section>
 
-      <SectionCard title="Trading Snapshot">
+      <Section title="Trading Snapshot">
         <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 lg:grid-cols-4">
           <StatItem label="Market State" value={quote.marketState ?? "-"} />
           <StatItem label="Quote Source" value="Delayed Quote" />
@@ -108,18 +108,15 @@ export function KeystatsTab({ data }: { data: ChartData }) {
           <StatItem label="Ask Size" value={formatNumber(keyStats.askSize, 0)} />
           <StatItem label="Spread" value={formatNumber(spread, 0)} />
         </div>
-      </SectionCard>
+      </Section>
 
       {data.earningsHistory.length > 0 && (
-        <SectionCard title="Earnings Results">
+        <Section title="Earnings Results">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {data.earningsHistory.map((point) => {
               const beat = point.surprise !== null && point.surprise >= 0;
               return (
-                <div
-                  key={point.quarter}
-                  className="rounded-xl border border-(--border) bg-(--surface-strong) p-3"
-                >
+                <div key={point.quarter}>
                   <p className="text-xs text-muted">{point.quarter}</p>
                   <p className="mt-1 text-xs text-muted">
                     Est {formatNumber(point.estimate, 2)} · Act{" "}
@@ -142,11 +139,11 @@ export function KeystatsTab({ data }: { data: ChartData }) {
               );
             })}
           </div>
-        </SectionCard>
+        </Section>
       )}
 
       {chartData.length > 0 && (
-        <SectionCard title="Revenue vs Earnings">
+        <Section title="Revenue vs Earnings">
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
@@ -182,10 +179,10 @@ export function KeystatsTab({ data }: { data: ChartData }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </SectionCard>
+        </Section>
       )}
 
-      <SectionCard title="Upcoming Events">
+      <Section title="Upcoming Events">
         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
           <StatItem
             label="Next Earnings"
@@ -200,7 +197,7 @@ export function KeystatsTab({ data }: { data: ChartData }) {
             value={formatDateShort(data.calendar.earningsCallStart)}
           />
         </div>
-      </SectionCard>
+      </Section>
     </div>
   );
 }

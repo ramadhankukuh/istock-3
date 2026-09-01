@@ -1,93 +1,115 @@
 import { NextResponse } from "next/server";
+import type { NewsItem } from "@/features/home/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-const feeds = [
-  { url: "https://rss.tempo.co/bisnis", source: "Tempo" },
-  { url: "https://www.cnnindonesia.com/ekonomi/rss", source: "CNN Indonesia" },
-  { url: "https://www.cnbcindonesia.com/market/rss", source: "CNBC Indonesia" },
-  { url: "https://finance.detik.com/rss", source: "Detik Finance" },
-  { url: "https://www.antaranews.com/rss/ekonomi.xml", source: "Antara News" },
-  { url: "https://sindikasi.okezone.com/index.php/rss/11/RSS2.0", source: "Okezone" },
-];
-
-type FeedItem = {
-  title: string;
-  link: string;
-  pubDate: string;
-  description: string;
-  source: string;
-  imageUrl?: string;
+type FeedSource = {
+  id: string;
+  label: string;
+  url: string;
 };
 
-function parseImageFromDescription(desc: string): string | undefined {
-  const match = desc.match(/<img[^>]+src="([^">]+)"/);
-  return match ? match[1] : undefined;
+const FEEDS: FeedSource[] = [
+  {
+    id: "cnbc",
+    label: "CNBC Indonesia",
+    url: "https://www.cnbcindonesia.com/rss",
+  },
+  {
+    id: "cnn",
+    label: "CNN Indonesia",
+    url: "https://www.cnnindonesia.com/ekonomi/rss",
+  },
+  {
+    id: "detik",
+    label: "Detik Finance",
+    url: "https://finance.detik.com/rss",
+  },
+  {
+    id: "antara",
+    label: "Antara",
+    url: "https://www.antaranews.com/rss/ekonomi",
+  },
+];
+
+type RssItem = {
+  title?: string;
+  description?: string;
+  link?: string;
+  pubDate?: string;
+  thumbnail?: string;
+  enclosure?: { link?: string } | null;
+};
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-async function fetchFeed(url: string, source: string): Promise<FeedItem[]> {
-  try {
-    const res = await fetch(
-      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`,
-      { cache: "no-store" },
-    );
+async function fetchFeed(feed: FeedSource): Promise<NewsItem[]> {
+  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(
+    feed.url,
+  )}`;
 
-    if (!res.ok) {
-      throw new Error(`Feed status ${res.status}`);
-    }
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    },
+    cache: "no-store",
+  });
 
-    const data = (await res.json()) as { items?: Array<Record<string, unknown>> };
-    const items = Array.isArray(data.items) ? data.items : [];
-
-    return items.slice(0, 6).map((item) => {
-      const title = String(item.title ?? "");
-      const link = String(item.link ?? "");
-      const pubDate = String(item.pubDate ?? "");
-      const description = String(item.description ?? "");
-      const enclosure = item.enclosure as
-        | { link?: string }
-        | string
-        | undefined;
-      const enclosureLink =
-        enclosure && typeof enclosure === "object" ? enclosure.link : undefined;
-
-      return {
-        title,
-        link,
-        pubDate,
-        description,
-        source,
-        imageUrl: enclosureLink || parseImageFromDescription(description),
-      };
-    });
-  } catch (e) {
-    console.error("Feed error:", url, e);
-    return [];
+  if (!res.ok) {
+    throw new Error(`Gagal fetch RSS ${feed.label}`);
   }
+
+  const json = await res.json();
+  if (json.status !== "ok") {
+    throw new Error(`RSS ${feed.label} tidak valid`);
+  }
+
+  return (json.items || []).map((item: RssItem) => ({
+    id: item.link ?? item.title ?? "",
+    title: stripHtml(item.title || ""),
+    description: stripHtml(item.description || ""),
+    link: item.link ?? "#",
+    source: feed.label,
+    pubDate: item.pubDate ?? "",
+    image: item.thumbnail || item.enclosure?.link || null,
+  }));
 }
 
 export async function GET() {
-  try {
-    const allItems = await Promise.all(
-      feeds.map((feed) => fetchFeed(feed.url, feed.source)),
-    );
+  const results = await Promise.allSettled(FEEDS.map(fetchFeed));
 
-    const allNews = allItems
-      .flat()
-      .sort(
-        (a, b) =>
-          new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
-      );
+  const allItems = results
+    .filter(
+      (result): result is PromiseFulfilledResult<NewsItem[]> =>
+        result.status === "fulfilled",
+    )
+    .flatMap((result) => result.value);
 
-    return NextResponse.json(allNews.slice(0, 6), {
-      status: 200,
-      headers: { "Cache-Control": "no-store" },
+  // Urutkan dari yang terbaru, lalu dedupe berdasarkan link.
+  const seen = new Set<string>();
+  const items = allItems
+    .filter((item) => item.title && item.link && item.link !== "#")
+    .sort(
+      (a, b) =>
+        new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
+    )
+    .filter((item) => {
+      if (seen.has(item.link)) return false;
+      seen.add(item.link);
+      return true;
     });
-  } catch (err) {
-    console.error("Error fetching news:", err);
-    return NextResponse.json(
-      { error: "Failed to fetch news" },
-      { status: 500 },
-    );
-  }
+
+  return NextResponse.json({ items: items.slice(0, 6) });
 }

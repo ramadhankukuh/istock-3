@@ -27,7 +27,7 @@ export default function OverviewBoard({
   const redPct = safePct(declining);
 
   return (
-    <div className="rounded-2xl border border-(--border) bg-(--surface-strong) p-4 sm:p-5">
+    <div className="rounded-2xl border border-(--border) p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <span className="text-sm font-semibold">Stock Breadth</span>
         <span className="text-[11px] text-muted">

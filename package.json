@@ -9,8 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
-    "@upstash/redis": "^1.38.2",
     "framer-motion": "^12.42.2",
     "lightweight-charts": "^5.2.0",
     "lucide-react": "^1.8.0",
@@ -19,6 +17,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
+    "redis": "^5.11.0",
     "technicalindicators": "^3.1.0",
     "yahoo-finance2": "^3.14.0",
     "zod": "^4.4.3"
@@ -32,7 +31,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
-    "tsx": "^4.23.12",
     "typescript": "^5"
   }
 }

@@ -1,107 +1,130 @@
 "use client";
 
+import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import ToolHeaderCard from "@/components/ui/tool-header-card";
-import { Accordion } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useSwingScreener } from "../hooks/use-swing-screener";
 import { ScreenerTable } from "./screener-table";
-import { SummaryStrip } from "./summary-strip";
+import { TradeSetupModal } from "./trade-setup-modal";
+import { cn } from "@/lib/utils/cn";
+import type { TradeSetup } from "../types";
 
-/* ── Page ── */
+type TabKey = "passed" | "all";
 
-type SwingScreenerBreadcrumb = {
-  label: string;
-  href?: string;
-  isHome?: boolean;
-};
+/**
+ * Halaman Swing Trade Screener (dipakai via SwingTradePreview di /explore).
+ * Memegang state tab + state modal "Lihat Setup" (satu instance modal).
+ */
+export function SwingScreenerPage() {
+  const { payload, isLoading, error, reload } = useSwingScreener();
+  const [tab, setTab] = useState<TabKey>("passed");
+  const [setupModal, setSetupModal] = useState<{
+    ticker: string;
+    setup: TradeSetup;
+  } | null>(null);
 
-type SwingScreenerPageProps = {
-  title?: string;
-  description?: string;
-  breadcrumbs?: SwingScreenerBreadcrumb[];
-};
-
-export default function SwingScreenerPage({
-  title = "Swing Trade Screener",
-  description = "Screener harian semua saham IDX — MA cross, RSI, MACD, volume breakout, dan akumulasi asing.",
-  breadcrumbs = [
-    { label: "Home", href: "/", isHome: true },
-    { label: "Tools", href: "/tools" },
-    { label: "Swing Screener" },
-  ],
-}: SwingScreenerPageProps) {
-  const { payload, loading, error, reload } = useSwingScreener();
-
-  const infoItems = [
-    {
-      title: "Apa itu Swing Trade Screener?",
-      content:
-        "Screener otomatis yang mengevaluasi semua saham IDX setiap hari kerja. Data harga diambil dari IDX API, disimpan sebagai histori OHLC di Turso, lalu indikator teknikal dihitung dan hasilnya di-cache di Redis.",
-    },
-    {
-      title: "Kriteria screening apa yang dipakai?",
-      content:
-        "Setiap saham diberi skor 0-6 berdasarkan signal: MA20 > MA50 (bullish), golden cross MA20/MA50, RSI(14) di rentang 50-75, MACD di atas signal line, volume breakout (volume >= 1.5x rata-rata 20 hari), dan akumulasi asing (foreign net 5 hari > 0). Saham dengan skor >= 3 dianggap lolos.",
-    },
-    {
-      title: "Seberapa sering data di-update?",
-      content:
-        "Pipeline berjalan otomatis lewat Vercel Cron setiap hari kerja (Senin-Jumat) pukul 17:00 WIB setelah pasar tutup. Halaman ini hanya membaca hasil terakhir dari Redis — tidak pernah request ke IDX saat runtime.",
-    },
-  ];
+  const allResults = payload?.results ?? [];
+  const passedResults = allResults.filter((r) => r.passed);
+  const visibleResults = tab === "passed" ? passedResults : allResults;
+  const showSetupButtons = tab === "passed";
 
   return (
-    <div className="space-y-8">
-      <ToolHeaderCard
-        title={title}
-        description={description}
-        breadcrumbs={breadcrumbs}
-        tags={["Analisis"]}
-      />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Swing Trade Screener</Badge>
+            {payload && (
+              <Badge
+                variant="outline"
+                className="text-green-600 dark:text-green-400"
+              >
+                {payload.passedCount} lolos
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted">
+            Screening harian saham IDX — sinyal MA/RSI/MACD + setup BOW/TP/SL
+            dari struktur support/resistance.
+          </p>
+          {payload && (
+            <p className="text-xs text-muted">
+              Update terakhir: {payload.lastUpdateFormatted} ·{" "}
+              {payload.total} ticker diproses
+            </p>
+          )}
+        </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+        <button
+          type="button"
+          onClick={reload}
+          className="focus-ring inline-flex shrink-0 items-center gap-2 rounded-full border border-(--border) bg-(--surface-strong) px-4 py-2 text-xs font-medium text-foreground transition hover:bg-foreground hover:text-background"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Muat ulang
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-2xl bg-(--surface-strong)/50 p-1 w-fit">
+        {(
+          [
+            { key: "passed", label: "Lolos screening" },
+            { key: "all", label: "Semua saham" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            aria-pressed={tab === t.key}
+            className={cn(
+              "focus-ring rounded-xl px-4 py-1.5 text-sm font-medium transition-colors",
+              tab === t.key
+                ? "bg-foreground text-background"
+                : "text-muted hover:text-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Body */}
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-4xl" />
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-8 text-center text-sm text-muted">
-          <p className="font-semibold text-foreground">Terjadi kesalahan</p>
-          <p className="mt-1">{error}</p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => reload()}
+        <div className="rounded-4xl border border-(--border) bg-(--surface) p-10 text-center shadow-(--shadow)">
+          <p className="text-sm text-muted">{error}</p>
+          <button
+            type="button"
+            onClick={reload}
+            className="focus-ring mt-4 rounded-full border border-(--border) bg-(--surface-strong) px-4 py-2 text-xs font-medium text-(--accent) transition hover:bg-foreground hover:text-background"
           >
             Coba lagi
-          </Button>
-        </div>
-      ) : !payload?.available ? (
-        <div className="rounded-2xl border border-(--border) bg-(--surface) p-10 text-center">
-          <p className="text-lg font-semibold text-foreground">
-            Data belum tersedia
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-            {payload?.message ??
-              "Cron screener belum pernah berjalan. Pipeline otomatis mengisi data setiap hari kerja pukul 17:00 WIB."}
-          </p>
-          <Button variant="outline" className="mt-5" onClick={() => reload()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Muat ulang
-          </Button>
+          </button>
         </div>
       ) : (
-        <>
-          {/* Summary strip */}
-          <SummaryStrip payload={payload} />
+        <ScreenerTable
+          results={visibleResults}
+          showSetupButtons={showSetupButtons}
+          onOpenSetup={(ticker, setup) => setSetupModal({ ticker, setup })}
+        />
+      )}
 
-          {/* Results table */}
-          <ScreenerTable results={payload?.results ?? []} />
-
-          <Accordion items={infoItems} defaultOpen={0} />
-        </>
+      {/* Modal setup — satu instance, di atas halaman */}
+      {setupModal && (
+        <TradeSetupModal
+          ticker={setupModal.ticker}
+          setup={setupModal.setup}
+          open
+          onClose={() => setSetupModal(null)}
+        />
       )}
     </div>
   );
