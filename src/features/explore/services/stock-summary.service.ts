@@ -5,7 +5,7 @@ import type {
 } from "@/features/explore/types";
 
 const IDX_STOCK_SUMMARY_API =
-  "https://www.idx.co.id/primary/TradingSummary/GetStockSummary";
+  "https://www.idx.id/primary/TradingSummary/GetStockSummary";
 
 import { formatWIB } from "@/lib/utils/date";
 
@@ -25,7 +25,7 @@ export async function fetchAndCacheStockSummary(): Promise<StockSummaryPayload> 
   const res = await fetch(url, {
     headers: {
       Accept: "application/json",
-      Referer: "https://www.idx.co.id/",
+      Referer: "https://www.idx.id/",
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
     },
     cache: "no-store",
