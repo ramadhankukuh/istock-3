@@ -1,27 +1,23 @@
 {
   "crons": [
     {
-      "path": "/api/cron/swing-screener",
+      "path": "/api/screener/swing/update",
       "schedule": "0 10 * * 1-5"
     },
     {
-      "path": "/api/cron/konglo",
+      "path": "/api/konglo/update",
       "schedule": "0 10 * * 1-5"
     },
     {
-      "path": "/api/cron/ipo-performance",
-      "schedule": "0 13 * * 1-5"
-    },
-    {
-      "path": "/api/cron/stock-summary",
+      "path": "/api/stock-summary/refresh",
       "schedule": "15 10 * * 1-5"
     },
     {
-      "path": "/api/cron/index-summary",
+      "path": "/api/index-summary?force=1",
       "schedule": "15 10 * * 1-5"
     },
     {
-      "path": "/api/cron/net-foreign",
+      "path": "/api/net-foreign/update",
       "schedule": "15 10 * * 1-5"
     }
   ]
