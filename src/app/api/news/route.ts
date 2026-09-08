@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+
 import type { NewsItem } from "@/features/home/types";
+import { rateLimit, rateLimitedResponse } from "@/lib/rate-limit";
+import { redis } from "@/lib/redis/redis";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -87,7 +90,24 @@ async function fetchFeed(feed: FeedSource): Promise<NewsItem[]> {
   }));
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const force = searchParams.get("force");
+
+  const { ok, retryAfter } = await rateLimit(req, {
+    limit: 30,
+    windowSec: 60,
+    prefix: "rl:news",
+  });
+  if (!ok) {
+    return rateLimitedResponse(retryAfter);
+  }
+
+  const cached = await redis.get("newsItems");
+  if (cached && force !== "1") {
+    return NextResponse.json(cached);
+  }
+
   const results = await Promise.allSettled(FEEDS.map(fetchFeed));
 
   const allItems = results
@@ -111,5 +131,7 @@ export async function GET() {
       return true;
     });
 
-  return NextResponse.json({ items: items.slice(0, 6) });
+  const payload = { items: items.slice(0, 6) };
+  await redis.set("newsItems", payload, { exSeconds: 300 });
+  return NextResponse.json(payload);
 }

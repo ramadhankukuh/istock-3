@@ -1,24 +1,21 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/screener/swing/update",
+      "path": "/api/stock-summary/update",
       "schedule": "0 10 * * 1-5"
-    },
-    {
-      "path": "/api/konglo/update",
-      "schedule": "0 10 * * 1-5"
-    },
-    {
-      "path": "/api/stock-summary/refresh",
-      "schedule": "15 10 * * 1-5"
-    },
-    {
-      "path": "/api/index-summary?force=1",
-      "schedule": "15 10 * * 1-5"
     },
     {
       "path": "/api/net-foreign/update",
-      "schedule": "15 10 * * 1-5"
+      "schedule": "10 10 * * 1-5"
+    },
+    {
+      "path": "/api/konglo/update",
+      "schedule": "20 10 * * 1-5"
+    },
+    {
+      "path": "/api/screener/swing/update",
+      "schedule": "0 15 * * 1-5"
     }
   ]
 }

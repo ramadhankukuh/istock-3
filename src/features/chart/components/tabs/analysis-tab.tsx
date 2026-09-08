@@ -122,13 +122,13 @@ export function AnalysisTab({ data }: { data: ChartData }) {
           Analyst price forecast for {data.symbol}.JK
         </p>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
+          <div className="rounded-xl border border-(--border) p-3">
             <p className="text-[10px] font-semibold uppercase text-red-500">Low</p>
             <p className="text-lg font-bold text-foreground">
               {formatNumber(analystSummary.targetLow, 0)}
             </p>
           </div>
-          <div>
+          <div className="rounded-xl border border-(--border) p-3">
             <p className="text-[10px] font-semibold uppercase text-emerald-600">
               Average
             </p>
@@ -139,7 +139,7 @@ export function AnalysisTab({ data }: { data: ChartData }) {
               {formatPercentSigned(upsidePercent)}
             </p>
           </div>
-          <div>
+          <div className="rounded-xl border border-(--border) p-3">
             <p className="text-[10px] font-semibold uppercase text-emerald-600">
               High
             </p>
@@ -174,9 +174,12 @@ export function AnalysisTab({ data }: { data: ChartData }) {
           <p className="mb-3 text-xs text-muted">
             Revenue and earnings projections
           </p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {consensusEstimates.map((point) => (
-              <div key={point.period}>
+              <div
+                key={point.period}
+                className="rounded-xl border border-(--border) p-3"
+              >
                 <p className="text-xs text-muted">{point.period}</p>
                 <p className="text-sm font-semibold text-foreground">
                   {formatCompactNumber(point.revenueAvg)} IDR

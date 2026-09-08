@@ -216,6 +216,19 @@ export async function forceRefreshNetForeignCache(days: number = MAX_DAYS) {
     attempts += 1;
   }
 
+  // Safety: kalau IDX sedang memblokir (403) dan kita dapat 0 hari, JANGAN
+  // menimpa cache lama yang masih valid dengan payload kosong. Error biar
+  // kelihatan di log, cache lama dipertahankan.
+  if (netForeignData.length === 0) {
+    const existing = await redis.get<NetForeignPayload>(CACHE_KEY);
+
+    if (existing?.data?.length) {
+      throw new Error(
+        "Gagal mengambil data net foreign dari IDX (kemungkinan 403) — cache lama dipertahankan.",
+      );
+    }
+  }
+
   const payload: NetForeignPayload = {
     lastUpdate: new Date().toISOString(),
     lastUpdateFormatted: formatWIB(new Date()),

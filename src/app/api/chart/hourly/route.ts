@@ -52,7 +52,12 @@ function filterHourly(
         q.close !== undefined,
     )
     .map((q) => ({ date: q.date, wib: toWIB(q.date), q }))
-    .filter((d) => d.wib.hours >= 9 && d.wib.hours < 16)
+    // 09:00 s.d. 15:59 + bar 16:00 (closing auction) — IDX tutup resmi 16:00 WIB.
+    .filter(
+      (d) =>
+        d.wib.hours >= 9 &&
+        (d.wib.hours < 16 || (d.wib.hours === 16 && d.wib.minutes === 0)),
+    )
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .map(({ wib, q }) => ({
       time: `${wib.year}-${String(wib.month + 1).padStart(2, "0")}-${String(

@@ -52,11 +52,11 @@ function StockLogo({
 export default function StockSummaryBoard({
   title,
   items,
-  inCard = true,
+  variant = "card",
 }: {
   title: string;
   items: StockSummaryBoardItem[];
-  inCard?: boolean;
+  variant?: "card" | "bordered" | "plain";
 }) {
   const boardContent = (
     <>
@@ -110,7 +110,7 @@ export default function StockSummaryBoard({
     </>
   );
 
-  if (inCard) {
+  if (variant === "card") {
     return (
       <Card className="overflow-hidden">
         <CardHeader className="px-4 pt-4 pb-0">
@@ -118,6 +118,17 @@ export default function StockSummaryBoard({
         </CardHeader>
         <CardContent className="p-0">{boardContent}</CardContent>
       </Card>
+    );
+  }
+
+  if (variant === "bordered") {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-(--border)">
+        <p className="px-4 pt-3.5 text-sm font-semibold text-foreground">
+          {title}
+        </p>
+        {boardContent}
+      </div>
     );
   }
 

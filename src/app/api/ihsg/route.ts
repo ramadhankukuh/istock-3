@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+
+import { rateLimit, rateLimitedResponse } from "@/lib/rate-limit";
+import { redis } from "@/lib/redis/redis";
 import { yahooFinance } from "@/lib/yahoo-finance";
 
 export const dynamic = "force-dynamic";
@@ -70,8 +73,25 @@ function filterIntraday(
     );
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const force = searchParams.get("force");
+
+    const { ok, retryAfter } = await rateLimit(req, {
+      limit: 30,
+      windowSec: 60,
+      prefix: "rl:ihsg",
+    });
+    if (!ok) {
+      return rateLimitedResponse(retryAfter);
+    }
+
+    const cached = await redis.get("ihsgData");
+    if (cached && force !== "1") {
+      return NextResponse.json(cached);
+    }
+
     const now = new Date();
     const { year, month, day } = toWIB(now);
 
@@ -144,7 +164,7 @@ export async function GET() {
     const change = lastPrice - prevClose;
     const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
 
-    return NextResponse.json({
+    const payload = {
       prevClose,
       intraday,
       fallbackDate: fallbackLabel,
@@ -158,7 +178,10 @@ export async function GET() {
         dayLow: Number(quote.regularMarketDayLow ?? lastPrice),
         volume: Number(quote.regularMarketVolume ?? 0),
       },
-    });
+    };
+
+    await redis.set("ihsgData", payload, { exSeconds: 30 });
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("Failed to fetch IHSG data:", error);
     return NextResponse.json(

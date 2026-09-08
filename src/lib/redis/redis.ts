@@ -247,3 +247,72 @@ export const redis: RedisAdapter = {
     globalState.__istockRedisMemory?.delete(key);
   },
 };
+
+/**
+ * INCR — dipakai untuk rate limiting (fixed-window counter).
+ * Fallback: Upstash REST → in-memory Map (dev / tanpa Redis).
+ */
+export async function incr(key: string): Promise<number> {
+  const client = await getRedisClient();
+
+  if (client) {
+    const runtimeClient = client as unknown as {
+      incr?: (k: string) => Promise<number>;
+    };
+
+    if (runtimeClient.incr) {
+      return await runtimeClient.incr(key);
+    }
+  }
+
+  if (hasUpstashRest) {
+    try {
+      const result = await runUpstashCommand(["INCR", key]);
+      return Number(result ?? 0);
+    } catch (error) {
+      console.error("Upstash INCR failed, falling back to memory cache", error);
+    }
+  }
+
+  const current = Number(globalState.__istockRedisMemory?.get(key) ?? "0");
+  const next = current + 1;
+  globalState.__istockRedisMemory?.set(key, String(next));
+  return next;
+}
+
+/**
+ * EXPIRE — set TTL untuk key rate limit.
+ */
+export async function expire(key: string, seconds: number): Promise<void> {
+  const client = await getRedisClient();
+
+  if (client) {
+    const runtimeClient = client as unknown as {
+      expire?: (k: string, s: number) => Promise<unknown>;
+    };
+
+    if (runtimeClient.expire) {
+      await runtimeClient.expire(key, seconds);
+      return;
+    }
+  }
+
+  if (hasUpstashRest) {
+    try {
+      await runUpstashCommand(["EXPIRE", key, String(seconds)]);
+      return;
+    } catch (error) {
+      console.error("Upstash EXPIRE failed", error);
+    }
+  }
+
+  if (globalState.__istockRedisMemory?.has(key)) {
+    const timeout = setTimeout(() => {
+      globalState.__istockRedisMemory?.delete(key);
+    }, seconds * 1000);
+
+    if (typeof timeout.unref === "function") {
+      timeout.unref();
+    }
+  }
+}

@@ -16,7 +16,7 @@ function formatDate(raw: string) {
 
 function NewsSkeleton() {
   return (
-    <div className="flex gap-3 rounded-2xl border border-(--border) bg-(--surface-strong) p-3">
+    <div className="flex gap-3 rounded-2xl border border-(--border) p-3">
       <div className="h-20 w-28 shrink-0 animate-pulse rounded-lg bg-(--surface)" />
       <div className="flex-1 space-y-2 py-1">
         <div className="h-2.5 w-24 animate-pulse rounded bg-(--surface)" />
@@ -57,7 +57,7 @@ export default function NewsSection() {
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex gap-3 rounded-2xl border border-(--border) bg-(--surface-strong) p-3 shadow-(--shadow-soft) transition-colors hover:border-(--accent)"
+              className="group flex gap-3 rounded-2xl border border-(--border) p-3 transition-colors hover:border-(--accent)"
             >
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-(--surface)">
                 {item.image ? (

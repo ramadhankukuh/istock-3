@@ -49,10 +49,10 @@ const ROW_LIMIT = 10;
 
 function SummaryTable({ rows }: { rows: SummaryRow[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
+    <div className="overflow-hidden rounded-2xl border border-(--border)">
       <div className="max-h-[34rem] overflow-auto">
         <table className="w-max min-w-[560px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10 border-b border-(--border) bg-(--surface-strong)">
+          <thead className="sticky top-0 z-10 border-b border-(--border) bg-(--background)">
             <tr>
               <th className="py-3 pl-4 pr-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
                 Nama
@@ -125,6 +125,23 @@ function SummaryTable({ rows }: { rows: SummaryRow[] }) {
   );
 }
 
+function SplitColumn({ title, rows }: { title: string; rows: SummaryRow[] }) {
+  return (
+    <section className="min-w-0 space-y-2">
+      <h3 className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+        {title}
+      </h3>
+      {rows.length === 0 ? (
+        <div className="flex items-center justify-center rounded-2xl border border-(--border) py-12 text-sm text-muted">
+          Belum ada data.
+        </div>
+      ) : (
+        <SummaryTable rows={rows} />
+      )}
+    </section>
+  );
+}
+
 export default function SectorBoard({
   indexSummary,
 }: {
@@ -193,18 +210,29 @@ export default function SectorBoard({
 
   return (
     <div className="space-y-3">
-      {/* Tab row — ala top movers (TabBar) */}
-      <TabBar
-        tabs={tabs}
-        activeKey={resolvedTab}
-        onChange={setActiveTab}
-      />
+      {/* Mobile: tab bar */}
+      <div className="lg:hidden">
+        <TabBar
+          tabs={tabs}
+          activeKey={resolvedTab}
+          onChange={setActiveTab}
+        />
+      </div>
 
-      {rows.length === 0 ? (
-        <p className="px-4 pt-2 text-sm text-muted">Belum ada data.</p>
-      ) : (
-        <SummaryTable rows={rows} />
-      )}
+      {/* Mobile: satu tabel sesuai tab aktif */}
+      <div className="lg:hidden">
+        {rows.length === 0 ? (
+          <p className="px-4 pt-2 text-sm text-muted">Belum ada data.</p>
+        ) : (
+          <SummaryTable rows={rows} />
+        )}
+      </div>
+
+      {/* Desktop: Sektor (kiri) | Indeks (kanan) */}
+      <div className="hidden items-start gap-4 lg:grid lg:grid-cols-2">
+        <SplitColumn title="Sektor" rows={sortedSectors} />
+        <SplitColumn title="Indeks" rows={sortedIndices} />
+      </div>
     </div>
   );
 }

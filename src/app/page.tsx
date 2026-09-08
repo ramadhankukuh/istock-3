@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TabBar } from "@/components/ui/tab-bar";
 import IHSGChartCard from "@/features/home/components/ihsg-chart-card";
@@ -20,6 +19,17 @@ import { useStockSummary } from "@/features/explore/hooks/use-stock-summary";
 import { useIndexSummary } from "@/features/explore/hooks/use-index-summary";
 import { generateLeaderboards } from "@/features/explore/services/stock-summary-leaderboard.service";
 import type { StockSummaryItem } from "@/features/explore/types";
+
+function BoardSkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-(--border)">
+      <div className="px-4 pt-3.5">
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <StockSummarySkeleton />
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { macro, isLoading: macroLoading } = useMacro();
@@ -183,48 +193,115 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      {/* Top Movers — tanpa card, tab style seperti /chart */}
+      {/* Top Movers — mobile: tab; desktop: semua board berdampingan */}
       <div className="space-y-3">
         <SectionHeading
           title="Top Movers"
           updatedAt={stockSummary?.lastUpdateFormatted}
         />
 
-        {/* Tab buttons — skeleton saat loading */}
-        {summaryLoading ? (
-          <div className="hide-scrollbar -mx-1 flex gap-1 overflow-x-auto border-b border-(--border) px-1">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton
-                key={`tab-skel-${i}`}
-                className="h-10 w-24 shrink-0"
-              />
-            ))}
-          </div>
-        ) : stockSummary && leaderboards ? (
-          <TabBar
-            tabs={summaryTabs.map((tab) => ({
-              key: tab.key,
-              label: tab.label,
-            }))}
-            activeKey={resolvedActiveSummaryKey}
-            onChange={setActiveSummaryKey}
-          />
-        ) : null}
-
-        {/* Board — tanpa card */}
         {summaryLoading ? (
           <>
-            <Skeleton className="h-5 w-24" />
-            <StockSummarySkeleton />
+            {/* Tab skeleton — mobile only */}
+            <div className="hide-scrollbar -mx-1 flex gap-1 overflow-x-auto border-b border-(--border) px-1 lg:hidden">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton
+                  key={`tab-skel-${i}`}
+                  className="h-10 w-24 shrink-0"
+                />
+              ))}
+            </div>
+
+            {/* Board skeleton mobile */}
+            <div className="lg:hidden">
+              <Skeleton className="h-5 w-24" />
+              <StockSummarySkeleton />
+            </div>
+
+            {/* Board skeleton desktop */}
+            <div className="hidden space-y-4 lg:block">
+              <div className="grid gap-4 lg:grid-cols-3">
+                {[0, 1, 2].map((i) => (
+                  <BoardSkeletonCard key={`skel-gain-${i}`} />
+                ))}
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <BoardSkeletonCard key={`skel-vol-${i}`} />
+                ))}
+              </div>
+            </div>
           </>
         ) : summaryError ? (
           <p className="pt-4 text-sm text-red-500">{summaryError}</p>
-        ) : stockSummary && leaderboards && activeSummaryTab ? (
-          <StockSummaryBoard
-            title={activeSummaryTab.label}
-            items={activeSummaryTab.items}
-            inCard={false}
-          />
+        ) : stockSummary && leaderboards ? (
+          <>
+            {/* Mobile: tab bar + board aktif */}
+            <div className="lg:hidden">
+              <TabBar
+                tabs={summaryTabs.map((tab) => ({
+                  key: tab.key,
+                  label: tab.label,
+                }))}
+                activeKey={resolvedActiveSummaryKey}
+                onChange={setActiveSummaryKey}
+              />
+            </div>
+            <div className="lg:hidden">
+              {activeSummaryTab ? (
+                <StockSummaryBoard
+                  title={activeSummaryTab.label}
+                  items={activeSummaryTab.items}
+                  variant="plain"
+                />
+              ) : null}
+            </div>
+
+            {/* Desktop: semua board tanpa tab */}
+            <div className="hidden space-y-4 lg:block">
+              {/* Baris 1 — kinerja */}
+              <div className="grid gap-4 lg:grid-cols-3">
+                <StockSummaryBoard
+                  title="Top Gainer"
+                  items={leaderboards.topGainer}
+                  variant="bordered"
+                />
+                <StockSummaryBoard
+                  title="Top Loser"
+                  items={leaderboards.topLoser}
+                  variant="bordered"
+                />
+                <StockSummaryBoard
+                  title="Top Value"
+                  items={leaderboards.topValue}
+                  variant="bordered"
+                />
+              </div>
+              {/* Baris 2 — aktivitas & asing */}
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+                <StockSummaryBoard
+                  title="Top Volume"
+                  items={leaderboards.topVolume}
+                  variant="bordered"
+                />
+                <StockSummaryBoard
+                  title="Top Frekuensi"
+                  items={leaderboards.topFreq}
+                  variant="bordered"
+                />
+                <StockSummaryBoard
+                  title="Net Foreign Buy"
+                  items={leaderboards.netForeignBuy}
+                  variant="bordered"
+                />
+                <StockSummaryBoard
+                  title="Net Foreign Sell"
+                  items={leaderboards.netForeignSell}
+                  variant="bordered"
+                />
+              </div>
+            </div>
+          </>
         ) : null}
       </div>
 
@@ -255,7 +332,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft)">
+            <div className="overflow-hidden rounded-2xl border border-(--border)">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-white/5 text-[11px] uppercase tracking-[0.16em] text-muted">
@@ -292,11 +369,9 @@ export default function HomePage() {
             </div>
           </div>
         ) : indexError ? (
-          <Card>
-            <CardContent className="pt-6 text-sm text-red-500">
-              {indexError}
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border border-(--border) px-4 py-4 text-sm text-red-500">
+            {indexError}
+          </div>
         ) : (
           <SectorBoard indexSummary={indexSummary} />
         )}

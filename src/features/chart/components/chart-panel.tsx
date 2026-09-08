@@ -65,11 +65,7 @@ export function ChartPanel({
 
       <div className="flex items-center justify-between gap-3">
         <ChartRangeTabs active={range} onChange={onRangeChange} />
-        <ChartStyleToggle
-          value={style}
-          onChange={onStyleChange}
-          range={range}
-        />
+        <ChartStyleToggle value={style} onChange={onStyleChange} />
       </div>
     </div>
   );

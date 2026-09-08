@@ -200,7 +200,17 @@ export type ChartStyle = "line" | "candle";
 export type IntradayPoint = {
   /** "HH:mm" WIB */
   time: string;
+  /** Harga penutupan bar (selalu ada). */
   price: number;
+  /**
+   * OHLC bar 15 menit — dipakai untuk menggambar candlestick di range 1D.
+   * Opsional supaya payload hasil cache Redis lama (sebelum deploy) tetap
+   * bisa dirender sebagai line tanpa error.
+   */
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
 };
 
 /** Response `GET /api/chart/intraday?symbol=...` */

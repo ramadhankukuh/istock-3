@@ -99,7 +99,7 @@ function SummaryItem({
   sub: string;
 }) {
   return (
-    <div className="text-center">
+    <div className="rounded-xl border border-(--border) px-3 py-4 text-center">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
         {label}
       </p>

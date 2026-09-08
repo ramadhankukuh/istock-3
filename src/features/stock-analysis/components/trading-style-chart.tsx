@@ -15,7 +15,11 @@ import type {
 } from "lightweight-charts";
 import type { CandlePoint } from "@/features/stock-analysis/types";
 import type { TradeSetup } from "@/features/swing-screener/types";
-import type { ChartRange, ChartStyle } from "@/features/chart/types";
+import type {
+  ChartRange,
+  ChartStyle,
+  IntradayPoint,
+} from "@/features/chart/types";
 import { formatNumber } from "@/features/stock-analysis/utils";
 
 function formatHoverDate(time: unknown) {
@@ -139,8 +143,8 @@ type Props = {
   dark: boolean;
   range?: ChartRange;
   style?: ChartStyle;
-  /** Titik intraday 15 menit — dipakai kalau range === "1D". */
-  intraday?: { time: string; price: number }[];
+  /** Titik intraday 15 menit (OHLC opsional) — dipakai kalau range === "1D". */
+  intraday?: IntradayPoint[];
   /** Tanggal sesi intraday ("YYYY-MM-DD") — wajib saat intraday terisi. */
   intradayDate?: string | null;
   /** Candle 1 jam (OHLC) 7 hari — dipakai kalau range === "1W". */
@@ -301,8 +305,15 @@ export default function TradingStyleChart({
     const hourlyPoints = activeRange === "1W" ? (hourly ?? []) : [];
     const useIntraday = intradayPoints.length > 0;
     const useHourly = hourlyPoints.length > 0;
-    // Range 1D tidak punya OHLC (hanya price 15 menit) → paksa line mode.
-    const effectiveStyle = activeRange === "1D" ? "line" : activeStyle;
+    // Range 1D kini punya OHLC (candle 15 menit). Fallback ke line hanya kalau
+    // titik intraday lama tanpa OHLC (mis. cache Redis sebelum deploy) supaya
+    // chart tidak pernah gagal render.
+    const intradayHasOHLC = intradayPoints.some(
+      (p) =>
+        p.open != null && p.high != null && p.low != null && p.close != null,
+    );
+    const effectiveStyle =
+      activeRange === "1D" && !intradayHasOHLC ? "line" : activeStyle;
 
     // Fallback 1D tanpa intraday (mis. fetch gagal): tampilkan ~30 candle
     // harian terakhir supaya chart tidak kosong.
@@ -328,15 +339,32 @@ export default function TradingStyleChart({
             : { time, value: p.close };
         })
       : useIntraday
-        ? intradayPoints.map((p) => ({
+        ? intradayPoints.map((p) => {
             // WIB wall-clock dikonversi ke timestamp UTC supaya label "HH:mm"
             // selalu tampil benar (lihat localization.timeFormatter di bawah).
-            time: toTimestamp(
+            const time = toTimestamp(
               p.time,
               intradayDate ?? undefined,
-            ) as UTCTimestamp,
-            value: p.price,
-          }))
+            ) as UTCTimestamp;
+            // Hanya bentuk OHLC saat gaya candle — kalau line, tetap kirim
+            // `value` (AreaSeries menolak data berbentuk candle tanpa `value`).
+            if (
+              effectiveStyle === "candle" &&
+              p.open != null &&
+              p.high != null &&
+              p.low != null &&
+              p.close != null
+            ) {
+              return {
+                time,
+                open: p.open,
+                high: p.high,
+                low: p.low,
+                close: p.close,
+              };
+            }
+            return { time, value: p.close ?? p.price };
+          })
         : effectiveStyle === "candle"
           ? dailyForChart.map((item) => ({
               time: item.time,
@@ -353,11 +381,35 @@ export default function TradingStyleChart({
     let mainSeries: ISeriesApi<"Candlestick" | "Area">;
     let isCandle = false;
 
-    if (useIntraday || effectiveStyle === "line") {
+    if (effectiveStyle === "line") {
+      // 1D: warna garis mengikuti arah hari — merah bila harga terakhir di
+      // bawah penutupan hari sebelumnya, hijau bila di atas. Untuk range lain
+      // (line atas candle harian) tetap hijau.
+      const lastIntradayPoint = intradayPoints[intradayPoints.length - 1];
+      const lastPrice =
+        lastIntradayPoint != null
+          ? (lastIntradayPoint.close ?? lastIntradayPoint.price ?? null)
+          : null;
+      const dayIsDown =
+        activeRange === "1D" &&
+        previousClose != null &&
+        lastPrice != null &&
+        lastPrice < previousClose;
+
+      const green = "#22c55e";
+      const red = "#ef4444";
       mainSeries = chart.addSeries(AreaSeries, {
-        lineColor: "#22c55e",
-        topColor: dark ? "rgba(34,197,94,0.28)" : "rgba(34,197,94,0.22)",
-        bottomColor: "rgba(34,197,94,0.02)",
+        lineColor: dayIsDown ? red : green,
+        topColor: dayIsDown
+          ? dark
+            ? "rgba(239,68,68,0.28)"
+            : "rgba(239,68,68,0.22)"
+          : dark
+            ? "rgba(34,197,94,0.28)"
+            : "rgba(34,197,94,0.22)",
+        bottomColor: dayIsDown
+          ? "rgba(239,68,68,0.02)"
+          : "rgba(34,197,94,0.02)",
         lineWidth: 2,
         priceLineVisible: false,
         lastValueVisible: true,

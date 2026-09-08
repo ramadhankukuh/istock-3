@@ -39,23 +39,43 @@ function formatTimeWIB(date: Date): string {
 }
 
 /**
- * Filter quotes intraday untuk tanggal tertentu (WIB) dalam jam trading IDX.
- * Return titik `{ time: "HH:mm", price }` terurut ascending.
+ * Filter quotes intraday untuk tanggal tertentu (WIB) dalam jam trading IDX
+ * (09:00–16:00 WIB). Bar terakhir jam 16:00 = hasil closing auction, jadi
+ * TIDAK dibuang (filter lama `< 16` membuat chart 1D berhenti di 15:45).
+ * Return titik `{ time, open, high, low, close, price }` terurut ascending —
+ * OHLC dipakai untuk menggambar candlestick 15 menit di range 1D.
  */
 function filterIntraday(
-  quotes: { date: Date; close: number | null }[],
+  quotes: {
+    date: Date;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    close: number | null;
+  }[],
   targetYear: number,
   targetMonth: number,
   targetDay: number,
 ) {
   return quotes
     .filter(
-      (q): q is typeof q & { close: number } =>
-        q.close !== null && q.close !== undefined && Number.isFinite(q.close),
+      (q): q is typeof q & Record<"open" | "high" | "low" | "close", number> =>
+        q.open !== null &&
+        q.open !== undefined &&
+        q.high !== null &&
+        q.high !== undefined &&
+        q.low !== null &&
+        q.low !== undefined &&
+        q.close !== null &&
+        q.close !== undefined &&
+        Number.isFinite(q.close),
     )
     .map((q) => ({
       date: q.date,
       wib: toWIB(q.date),
+      open: Number(q.open),
+      high: Number(q.high),
+      low: Number(q.low),
       close: Number(q.close),
     }))
     .filter(
@@ -64,11 +84,21 @@ function filterIntraday(
         d.wib.month === targetMonth &&
         d.wib.day === targetDay,
     )
-    .filter((d) => d.wib.hours >= 9 && d.wib.hours < 16)
+    // 09:00 s.d. 15:59 + bar 16:00 (closing auction). Tidak ada bar > 16:00
+    // karena IDX tidak punya sesi setelah penutupan.
+    .filter(
+      (d) =>
+        d.wib.hours >= 9 &&
+        (d.wib.hours < 16 || (d.wib.hours === 16 && d.wib.minutes === 0)),
+    )
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .map((d) => ({
       time: formatTimeWIB(d.date),
       price: d.close,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
     }));
 }
 

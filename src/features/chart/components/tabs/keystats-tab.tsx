@@ -116,7 +116,10 @@ export function KeystatsTab({ data }: { data: ChartData }) {
             {data.earningsHistory.map((point) => {
               const beat = point.surprise !== null && point.surprise >= 0;
               return (
-                <div key={point.quarter}>
+                <div
+                  key={point.quarter}
+                  className="rounded-xl border border-(--border) p-3"
+                >
                   <p className="text-xs text-muted">{point.quarter}</p>
                   <p className="mt-1 text-xs text-muted">
                     Est {formatNumber(point.estimate, 2)} · Act{" "}
