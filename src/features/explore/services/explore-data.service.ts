@@ -144,7 +144,8 @@ const ALL_YAHOO_SYMBOLS = EXPLORE_CONFIG.flatMap((category) =>
 );
 
 function getIdxLogoUrl(symbol: string) {
-  return `https://ik.imagekit.io/kuh/istock/indeks/${symbol}.png?tr=f-auto`;
+  // Proxy lewat /api/logo karena ik.imagekit.io diblokir Internet Positif.
+  return `/api/logo?path=${encodeURIComponent(`indeks/${symbol}.png`)}`;
 }
 
 function toTrend(changePercent: number): AssetTrend {

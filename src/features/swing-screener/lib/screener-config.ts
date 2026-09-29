@@ -19,6 +19,16 @@
  *     nanti kandidatnya terlalu lemah), baru longgarkan filter kualitas.
  */
 export const screenerConfig = {
+  /**
+   * Rolling window histori OHLC per ticker di Turso (hari bursa).
+   * Setiap kali cron selesai upsert, baris paling lama dipangkas sampai tiap
+   * ticker menyisakan maksimal `historyDays` baris terakhir.
+   */
+  historyDays: 250,
+
+  /** Minimal jumlah bar valid sebelum indikator dihitung. */
+  minBars: 60,
+
   /** Skor minimal dari 6 sinyal. 3 = butuh setengah+ sinyal terpenuhi. */
   minScore: 3,
 

@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-/** Base URL logo saham dari ImageKit (pola sama seperti /explore). */
-const IMAGEKIT_BASE = "https://ik.imagekit.io/kuh/istock/company";
+import { companyLogoUrl } from "@/lib/logo";
 
 type Props = {
   symbol: string;
@@ -50,7 +48,7 @@ export function StockLogo({ symbol, size = 40 }: Props) {
 
   return (
     <img
-      src={`${IMAGEKIT_BASE}/${encodeURIComponent(symbol)}.png?tr=f-auto`}
+      src={companyLogoUrl(symbol)}
       alt={`Logo ${symbol}`}
       width={size}
       height={size}

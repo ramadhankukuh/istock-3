@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import IHSGRechartsChart from "@/features/home/components/ihsg-recharts-chart";
 import { cn } from "@/lib/utils/cn";
+import { indexLogoUrl } from "@/lib/logo";
 
 type IntradayPoint = {
   time: string;
@@ -89,7 +90,7 @@ export default function IHSGChartCard() {
               {!logoFailed ? (
                 <div className="flex h-10 w-10 items-center justify-center sm:h-12 sm:w-12">
                   <Image
-                    src="https://ik.imagekit.io/kuh/istock/indeks/IHSG.png?tr=f-auto"
+                    src={indexLogoUrl("IHSG")}
                     alt="IHSG logo"
                     width={44}
                     height={44}

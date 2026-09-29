@@ -14,8 +14,16 @@
       "schedule": "20 10 * * 1-5"
     },
     {
+      "path": "/api/index-summary/update",
+      "schedule": "30 10 * * 1-5"
+    },
+    {
       "path": "/api/screener/swing/update",
-      "schedule": "0 15 * * 1-5"
+      "schedule": "0 12 * * 1-5"
+    },
+    {
+      "path": "/api/screener/swing/publish",
+      "schedule": "0 14 * * 1-5"
     }
   ]
 }

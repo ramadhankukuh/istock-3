@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { TabBar } from "@/components/ui/tab-bar";
+import { companyLogoUrl } from "@/lib/logo";
 import { useUmaSuspend } from "@/features/explore/hooks/use-uma-suspend";
 import SectionHeading from "@/features/explore/components/section-heading";
 import type { UmaItem, SuspendItem } from "@/features/explore/types";
@@ -29,7 +30,7 @@ function StockLogo({
   return (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-(--border) shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
       <Image
-        src={`https://ik.imagekit.io/kuh/istock/company/${stockCode}.png?tr=f-auto`}
+        src={companyLogoUrl(stockCode)}
         alt={`${stockName} logo`}
         width={32}
         height={32}

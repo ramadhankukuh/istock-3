@@ -1,19 +1,28 @@
 /**
  * Types untuk Swing Trade Screener.
  *
+ * Sumber data: histori OHLC harian IDX disimpan di Turso (SQLite), diisi oleh
+ * pipeline cron dari endpoint IDX Trading Summary (1 request = semua saham).
+ * Hasil screening ditulis ke Redis dan dibaca halaman /explore.
+ *
  * `tradeSetup` dihitung dari struktur support/resistance (pivot high/low pada
  * histori candle) — terpisah dari indikator MA/RSI/MACD, tapi hasilnya ikut
  * menentukan status lolos screening (`passed`).
  */
 
-/** Candle harian IDX hasil normalisasi dari Yahoo Finance chart. */
+/** Candle harian IDX hasil mapping dari response IDX Trading Summary. */
 export type IdxCandle = {
-  time: string; // YYYY-MM-DD (ascending by date)
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
+  ticker: string;
+  /** Tanggal trading, format YYYY-MM-DD. */
+  date: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+  value: number | null;
+  /** ForeignBuy - ForeignSell (dalam rupiah). */
+  foreignNet: number | null;
 };
 
 /** Trade setup BOW/TP1/TP2/SL hasil `computeTradeSetup`. */
@@ -64,6 +73,18 @@ export type SwingScreenerResult = {
   tradeSetup: TradeSetup | null;
 };
 
+/** Ringkasan pipeline yang ditulis bersama hasil (buat observability cron). */
+export type SwingScreenerSummary = {
+  fetched: number;
+  universeSize: number;
+  upserted: number;
+  trimmed: number;
+  screened: number;
+  passed: number;
+  failed: number;
+  durationMs: number;
+};
+
 /** Payload yang dicache di Redis dan dibaca halaman /explore. */
 export type SwingScreenerPayload = {
   lastUpdate: string;
@@ -71,4 +92,5 @@ export type SwingScreenerPayload = {
   total: number;
   passedCount: number;
   results: SwingScreenerResult[];
+  summary?: SwingScreenerSummary | null;
 };

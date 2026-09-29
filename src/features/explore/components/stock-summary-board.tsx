@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
+import { companyLogoUrl } from "@/lib/logo";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 type StockSummaryBoardItem = {
@@ -36,7 +37,7 @@ function StockLogo({
   return (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-(--border) shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
       <Image
-        src={`https://ik.imagekit.io/kuh/istock/company/${stockCode}.png?tr=f-auto`}
+        src={companyLogoUrl(stockCode)}
         alt={`${stockName} logo`}
         width={32}
         height={32}
