@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/net-foreign/update",
-      "schedule": "10 10 * * 1-5"
+      "schedule": "10 12 * * 1-5"
     },
     {
       "path": "/api/konglo/update",

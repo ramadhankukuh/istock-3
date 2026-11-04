@@ -182,6 +182,65 @@ export async function getLatestCandleDate(): Promise<string | null> {
   return value == null ? null : String(value);
 }
 
+export type ForeignFlowCandle = {
+  ticker: string;
+  date: string;
+  close: number;
+  foreignNet: number;
+};
+
+/**
+ * Ambil histori foreign flow dari candle yang sudah tersimpan di Turso.
+ * Satu query dipakai bersama oleh fitur Foreign Flow, tanpa request IDX baru.
+ */
+export async function getForeignFlowCandles(
+  limit: number,
+): Promise<ForeignFlowCandle[]> {
+  if (limit <= 0) return [];
+
+  const client = await getClient();
+  const result = await client.execute({
+    sql: `
+      SELECT ticker, date, close, foreign_net
+      FROM candles
+      WHERE date IN (
+        SELECT date
+        FROM candles
+        WHERE close IS NOT NULL AND foreign_net IS NOT NULL
+        GROUP BY date
+        ORDER BY date DESC
+        LIMIT ?
+      )
+        AND close IS NOT NULL
+        AND foreign_net IS NOT NULL
+      ORDER BY date DESC, ticker ASC
+    `,
+    args: [limit],
+  });
+
+  return result.rows.flatMap((row) => {
+    const close = Number(row.close);
+    const foreignNet = Number(row.foreign_net);
+    if (
+      !row.ticker ||
+      !row.date ||
+      !Number.isFinite(close) ||
+      !Number.isFinite(foreignNet)
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        ticker: String(row.ticker),
+        date: String(row.date),
+        close,
+        foreignNet,
+      },
+    ];
+  });
+}
+
 /** Jumlah baris candle untuk satu ticker (buat verifikasi window). */
 export async function countCandlesForTicker(ticker: string): Promise<number> {
   const client = await getClient();
