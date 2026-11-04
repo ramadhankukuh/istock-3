@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExploreMiniSparkline } from "@/features/explore/components/mini-sparkline";
 import { cn } from "@/lib/utils/cn";
 import type { ExploreCategory } from "@/features/explore/types";
@@ -19,8 +18,8 @@ export default function ExploreCard({
   const chartPositive = item.trend !== "down";
 
   return (
-    <Card className="group">
-      <CardHeader className="space-y-2 pb-3">
+    <div className="group rounded-2xl border border-(--border)">
+      <div className="flex flex-col gap-2 p-5 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-center gap-2">
           {item.logo && !failedLogos[item.symbol] ? (
             <div className="flex h-8 w-8 items-center justify-center">
@@ -40,19 +39,19 @@ export default function ExploreCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <CardTitle className="flex items-center gap-1 truncate text-sm sm:text-base">
+            <h3 className="flex items-center gap-1 truncate text-sm font-semibold leading-tight sm:text-base">
               {item.symbol}
               {item.isMarketOpen && (
                 <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
               )}
-            </CardTitle>
+            </h3>
             <p className="truncate text-[10px] leading-snug text-muted sm:text-[11px]">
               {item.name}
             </p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="space-y-1">
           <div className="flex items-baseline gap-2">
             <p className="text-lg font-semibold tracking-tight sm:text-xl">
@@ -74,7 +73,7 @@ export default function ExploreCard({
             />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

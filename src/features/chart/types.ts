@@ -1,6 +1,7 @@
 import type { CandlePoint } from "@/features/stock-analysis/types";
 
 export type ChartTab =
+  | "plan"
   | "keystats"
   | "analysis"
   | "financials"

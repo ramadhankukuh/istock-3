@@ -18,6 +18,7 @@ import type {
 } from "@/features/chart/types";
 
 const VALID_TABS: ChartTab[] = [
+  "plan",
   "keystats",
   "analysis",
   "financials",

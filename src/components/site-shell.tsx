@@ -27,7 +27,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* ── Mobile header: profile | logo center | theme ── */}
-      <header className="sticky top-0 z-40 border-b border-(--border) bg-(--glass) backdrop-blur-2xl lg:hidden">
+      <header className="border-b border-(--border) bg-(--glass) backdrop-blur-2xl lg:hidden">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3">
           {/* Left: Profile */}
           <button
@@ -68,15 +68,15 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ── Desktop header: logo | nav center | actions ── */}
-      <header className="sticky top-4 z-40 mx-auto hidden w-full max-w-5xl px-4 sm:top-6 sm:px-6 lg:block lg:top-8">
-        <div className="rounded-2xl border border-(--border)/80 bg-(--glass) px-3 py-2 shadow-(--shadow) shadow-black/3 backdrop-blur-3xl backdrop-saturate-150 lg:rounded-3xl lg:px-4">
+      <header className="hidden border-b border-(--border) bg-(--glass) backdrop-blur-2xl md:block">
+        <div className="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             {/* Left: Logo */}
             <Link href="/" className="flex w-fit items-center gap-2.5 justify-self-start">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-(--border) bg-(--surface-strong) shadow-(--shadow-soft) lg:h-10 lg:w-10">
-                <BarChart3 className="h-5 w-5 text-(--accent)" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-(--border) bg-(--surface-strong)">
+                <BarChart3 className="h-4 w-4 text-(--accent)" />
               </div>
-              <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-foreground lg:text-xs">
+              <span className="text-xs font-semibold uppercase tracking-[0.25em] text-foreground">
                 iStock
               </span>
             </Link>
@@ -167,7 +167,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
       {!isToolPage && (
       /* ── Mobile bottom navbar ── */
-      <nav className="fixed inset-x-4 bottom-4 z-40 sm:inset-x-8 lg:hidden">
+      <nav className="fixed inset-x-4 bottom-4 z-40 sm:inset-x-8 md:hidden">
         <div className="mx-auto max-w-2xl rounded-4xl border border-(--border)/80 bg-(--glass) p-1.5 shadow-(--shadow) shadow-black/3 backdrop-blur-3xl backdrop-saturate-150">
           <div className="relative grid grid-cols-5">
             {activeNavIndex >= 0 ? (

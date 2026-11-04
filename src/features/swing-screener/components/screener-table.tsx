@@ -65,7 +65,7 @@ export function ScreenerTable({
 }) {
   if (results.length === 0) {
     return (
-      <div className="rounded-4xl border border-(--border) bg-(--surface) p-10 text-center shadow-(--shadow)">
+      <div className="rounded-4xl border border-(--border) p-10 text-center">
         <p className="text-sm text-muted">
           Belum ada data. Jalankan update screener dulu, atau tidak ada saham
           yang cocok di tab ini.
@@ -75,7 +75,7 @@ export function ScreenerTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-4xl border border-(--border) bg-(--surface) shadow-(--shadow)">
+    <div className="overflow-x-auto rounded-4xl border border-(--border)">
       <table className="w-full min-w-[960px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-(--border) text-left text-xs uppercase tracking-[0.14em] text-muted">

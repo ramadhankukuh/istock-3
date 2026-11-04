@@ -4,7 +4,12 @@ export function Card({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("glass-card rounded-3xl", className)} {...props} />;
+  return (
+    <div
+      className={cn("rounded-3xl border border-(--border) bg-transparent", className)}
+      {...props}
+    />
+  );
 }
 
 export function CardHeader({

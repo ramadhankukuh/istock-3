@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils/cn";
 
 /* ── Icon lookup ── */
 const iconMap: Record<string, LucideIcon> = {
-  "stock-analysis": BarChart3,
   "foreign-flow": ArrowRightLeft,
   "uw-tracker": Eye,
   "konglo-tracker": Building2,

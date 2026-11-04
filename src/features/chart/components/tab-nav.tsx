@@ -4,6 +4,7 @@ import { TabBar } from "@/components/ui/tab-bar";
 import type { ChartTab } from "@/features/chart/types";
 
 const TABS: { key: ChartTab; label: string }[] = [
+  { key: "plan", label: "Plan" },
   { key: "keystats", label: "Keystats" },
   { key: "analysis", label: "Analysis" },
   { key: "financials", label: "Financials" },

@@ -1,12 +1,11 @@
 "use client";
 
 import React from "react";
-import { Search } from "lucide-react";
+import { TabBar } from "@/components/ui/tab-bar";
 import ExploreCard from "@/features/explore/components/explore-card";
 import ExploreCardSkeleton from "@/features/explore/components/explore-card-skeleton";
 import { SwingTradePreview } from "@/features/explore/components/swing-trade-preview";
 import { useExplore } from "@/features/explore/hooks/use-explore";
-import { cn } from "@/lib/utils/cn";
 import type { ExploreCategory } from "@/features/explore/types";
 
 const EXPLORE_KEYS = ["global", "komoditas", "currency"];
@@ -44,39 +43,24 @@ export default function ExplorePage() {
   }, [filteredCategories, resolvedActiveCategoryKey]);
 
   return (
-    <section className="space-y-6 overflow-hidden">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        <input
-          type="text"
-          placeholder="Cari indeks, komoditas, atau mata uang..."
-          className="focus-ring h-10 w-full rounded-xl border border-(--border) bg-(--surface-strong) pl-10 pr-4 text-sm text-foreground placeholder:text-muted outline-none transition focus:border-(--accent)"
-        />
-      </div>
-
+    <section className="space-y-6">
       {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-        {categoriesLoading
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <ExploreCardSkeleton key={i} />
-            ))
-          : filteredCategories.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setActiveCategoryKey(c.key)}
-                aria-pressed={c.key === activeCategory?.key}
-                className={cn(
-                  "focus-ring shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                  c.key === activeCategory?.key
-                    ? "bg-foreground text-background"
-                    : "bg-(--surface-strong) text-muted hover:text-foreground",
-                )}
-              >
-                {c.label}
-              </button>
-            ))}
-      </div>
+      {categoriesLoading ? (
+        <div className="flex gap-6 border-b border-(--border) pb-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-5 w-20 animate-pulse rounded bg-(--surface-strong)" />
+          ))}
+        </div>
+      ) : (
+        <TabBar
+          tabs={filteredCategories.map((category) => ({
+            key: category.key,
+            label: category.label,
+          }))}
+          activeKey={resolvedActiveCategoryKey}
+          onChange={setActiveCategoryKey}
+        />
+      )}
 
       {/* Category cards */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">

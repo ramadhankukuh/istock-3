@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AreaSeries,
   CandlestickSeries,
   ColorType,
   LineStyle,
+  LineSeries,
   createChart,
 } from "lightweight-charts";
 import type {
@@ -219,12 +219,14 @@ export default function TradingStyleChart({
   useEffect(() => {
     if (!containerRef.current || !candles?.length) return;
 
+    const backgroundColor = dark ? "#121212" : "#ffffff";
+
     const chart = createChart(containerRef.current, {
       layout: {
         attributionLogo: false,
         background: {
           type: ColorType.Solid,
-          color: dark ? "#0B1220" : "#FFFFFF",
+          color: backgroundColor,
         },
         textColor: dark ? "#94A3B8" : "#475569",
         fontFamily: "Inter, sans-serif",
@@ -266,7 +268,7 @@ export default function TradingStyleChart({
       },
 
       crosshair: {
-        mode: 0,
+        mode: 1,
         vertLine: {
           visible: true,
           width: 1,
@@ -378,7 +380,7 @@ export default function TradingStyleChart({
               value: item.close,
             }));
 
-    let mainSeries: ISeriesApi<"Candlestick" | "Area">;
+      let mainSeries: ISeriesApi<"Candlestick" | "Line">;
     let isCandle = false;
 
     if (effectiveStyle === "line") {
@@ -389,28 +391,25 @@ export default function TradingStyleChart({
       const lastPrice =
         lastIntradayPoint != null
           ? (lastIntradayPoint.close ?? lastIntradayPoint.price ?? null)
-          : null;
+          : (() => {
+              const lastPoint = seriesData[seriesData.length - 1];
+              return lastPoint && "value" in lastPoint ? lastPoint.value : null;
+            })();
+      const firstPoint = seriesData[0];
+      const firstPrice =
+        activeRange === "1D" && previousClose != null
+          ? previousClose
+          : firstPoint && "value" in firstPoint
+            ? firstPoint.value
+            : null;
       const dayIsDown =
-        activeRange === "1D" &&
-        previousClose != null &&
-        lastPrice != null &&
-        lastPrice < previousClose;
+        firstPrice != null && lastPrice != null && lastPrice < firstPrice;
 
       const green = "#22c55e";
       const red = "#ef4444";
-      mainSeries = chart.addSeries(AreaSeries, {
-        lineColor: dayIsDown ? red : green,
-        topColor: dayIsDown
-          ? dark
-            ? "rgba(239,68,68,0.28)"
-            : "rgba(239,68,68,0.22)"
-          : dark
-            ? "rgba(34,197,94,0.28)"
-            : "rgba(34,197,94,0.22)",
-        bottomColor: dayIsDown
-          ? "rgba(239,68,68,0.02)"
-          : "rgba(34,197,94,0.02)",
-        lineWidth: 2,
+      mainSeries = chart.addSeries(LineSeries, {
+        color: dayIsDown ? red : green,
+        lineWidth: 3,
         priceLineVisible: false,
         lastValueVisible: true,
       });
@@ -673,7 +672,10 @@ export default function TradingStyleChart({
   ]);
 
   return (
-    <div className="relative h-100 w-full overflow-hidden rounded-xl">
+    <div
+      className="relative h-100 w-full overflow-hidden rounded-xl"
+      style={{ backgroundColor: dark ? "#121212" : "#ffffff" }}
+    >
       {hoverPosition && (
         <div
           className="pointer-events-none absolute bottom-0 top-0 z-5"
@@ -766,6 +768,7 @@ export default function TradingStyleChart({
 
       <div
         className="h-100 w-full overflow-hidden rounded-xl"
+        style={{ backgroundColor: dark ? "#121212" : "#ffffff" }}
         ref={containerRef}
       />
     </div>

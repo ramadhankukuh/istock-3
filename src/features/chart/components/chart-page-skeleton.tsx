@@ -49,7 +49,7 @@ export function ChartPageSkeleton() {
 
       {/* Tab nav */}
       <div className="flex gap-1 border-b border-(--border) px-1">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-10 w-24 rounded-md" />
         ))}
       </div>

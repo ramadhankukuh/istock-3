@@ -11,6 +11,7 @@ import { AnalysisTab } from "@/features/chart/components/tabs/analysis-tab";
 import { FinancialsTab } from "@/features/chart/components/tabs/financials-tab";
 import { SeasonalityTab } from "@/features/chart/components/tabs/seasonality-tab";
 import { AboutTab } from "@/features/chart/components/tabs/about-tab";
+import { PlanTab } from "@/features/chart/components/tabs/plan-tab";
 import { useChartPage } from "@/features/chart/hooks/use-chart-page";
 
 type Props = {
@@ -82,6 +83,7 @@ export default function ChartPage({ initialSymbol, initialTab }: Props) {
             <TabContentSkeleton />
           ) : data ? (
             <>
+              {tab === "plan" && <PlanTab data={data} />}
               {tab === "keystats" && <KeystatsTab data={data} />}
               {tab === "analysis" && <AnalysisTab data={data} />}
               {tab === "financials" && <FinancialsTab data={data} />}

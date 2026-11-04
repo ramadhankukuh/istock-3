@@ -7,13 +7,6 @@ export type ToolItem = {
 
 export const tools: ToolItem[] = [
   {
-    slug: "stock-analysis",
-    title: "Stock Analysis",
-    description:
-      "Analisis saham teknikal dan fundamental dengan indikator RSI, MACD, MA, serta data profil emiten dan rating analis.",
-    category: "Analisis",
-  },
-  {
     slug: "foreign-flow",
     title: "Foreign Flow",
     description:

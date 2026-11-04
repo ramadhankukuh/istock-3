@@ -44,12 +44,16 @@ function StockLogo({
 }
 
 const cleanCompanyName = (raw: string) => {
-  let name = raw.replace(
-    /^(UMA atas Saham|Pembukaan Kembali Perdagangan Saham|Penghentian Sementara Perdagangan Saham)\s+/i,
-    "",
-  );
+  const companyStart = raw.search(/\bPT\s+/i);
+  let name =
+    companyStart >= 0
+      ? raw.slice(companyStart)
+      : raw.replace(
+          /^(UMA atas Saham|Pembukaan Kembali Perdagangan(?: \(Unsuspend\))? Saham|Penghentian Sementara Perdagangan(?: \(Suspend\))?(?: Efek)?|Penghentian Sementara Perdagangan Saham)\s+/i,
+          "",
+        );
+  name = name.replace(/^PT\s+/i, "");
   name = name.replace(/\s*& Waran Seri [IVX, ]+/gi, "");
-  name = name.replace(/\s*\([^)]*\)\s*$/, "");
   name = name.replace(/\s+/g, " ");
   return name.trim();
 };
