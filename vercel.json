@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/stock-summary/update",
-      "schedule": "0 10 * * 1-5"
+      "schedule": "5 12 * * 1-5"
     },
     {
       "path": "/api/net-foreign/update",

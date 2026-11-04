@@ -72,12 +72,17 @@ async function getNameMap(): Promise<Record<string, string>> {
  * Fetch 1 hari bursa dari IDX, upsert ke Turso, lalu trim rolling window.
  * Return jumlah candle yang di-upsert (0 kalau hari itu bukan hari bursa).
  */
-async function ingestTradingDay(dateStr: string): Promise<{
+async function ingestTradingDay(
+  dateStr: string,
+  cacheAsLatest = false,
+): Promise<{
   fetched: number;
   upserted: number;
   trimmed: number;
 }> {
-  const rows = await fetchIdxStockSummary(toIdxDateParam(dateStr));
+  const rows = await fetchIdxStockSummary(toIdxDateParam(dateStr), {
+    cacheAsLatest,
+  });
 
   if (rows.length === 0) {
     return { fetched: 0, upserted: 0, trimmed: 0 };
@@ -188,7 +193,7 @@ export async function runSwingScreenerUpdate(): Promise<SwingScreenerPayload> {
   console.log("🚀 [swing-screener] update started");
 
   const today = toWIBDateString();
-  let result = await ingestTradingDay(today);
+  let result = await ingestTradingDay(today, true);
 
   // Fallback: kalau data hari ini belum dipublikasikan IDX (mis. cron jalan
   // sebelum IDX update), ambil hari bursa terakhir yang tersedia.

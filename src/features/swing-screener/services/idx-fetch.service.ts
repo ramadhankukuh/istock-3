@@ -1,4 +1,5 @@
 import type { IdxCandle } from "../types";
+import { redis } from "@/lib/redis/redis";
 
 /**
  * IDX Trading Summary — semua saham IDX dalam satu response.
@@ -16,12 +17,17 @@ const IDX_HEADERS = {
   Referer: "https://www.idx.id/",
   Accept: "application/json, text/plain, */*",
 };
+const LATEST_SUMMARY_CACHE_KEY = "idx:latest-trading-summary";
+const LATEST_SUMMARY_CACHE_TTL_SECONDS = 2 * 24 * 60 * 60;
 
 /** Row mentah dari IDX API. Field lain diabaikan. */
 export type IdxRow = {
   StockCode?: string;
   StockName?: string;
   Date?: string;
+  Previous?: number | null;
+  Change?: number | null;
+  Frequency?: number | null;
   OpenPrice?: number | null;
   High?: number | null;
   Low?: number | null;
@@ -40,6 +46,7 @@ export type IdxRow = {
  */
 export async function fetchIdxStockSummary(
   dateStr?: string,
+  options?: { cacheAsLatest?: boolean },
 ): Promise<IdxRow[]> {
   const url = dateStr ? `${IDX_URL}&date=${dateStr}` : IDX_URL;
 
@@ -52,8 +59,45 @@ export async function fetchIdxStockSummary(
     throw new Error(`IDX API HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const json = (await response.json()) as { data?: IdxRow[] };
-  return Array.isArray(json?.data) ? json.data : [];
+  const json = (await response.json()) as {
+    data?: IdxRow[];
+    recordsTotal?: number;
+  };
+  const rows = Array.isArray(json?.data) ? json.data : [];
+
+  if (!dateStr || options?.cacheAsLatest) {
+    await cacheLatestIdxStockSummary(rows, json.recordsTotal ?? rows.length);
+  }
+
+  return rows;
+}
+
+export async function cacheLatestIdxStockSummary(
+  rows: IdxRow[],
+  recordsTotal = rows.length,
+): Promise<void> {
+  await redis.set(
+    LATEST_SUMMARY_CACHE_KEY,
+    { rows, recordsTotal },
+    { exSeconds: LATEST_SUMMARY_CACHE_TTL_SECONDS },
+  );
+}
+
+export async function getCachedLatestIdxStockSummary(): Promise<{
+  rows: IdxRow[];
+  recordsTotal: number;
+} | null> {
+  const cached = await redis.get<{
+    rows?: IdxRow[];
+    recordsTotal?: number;
+  }>(LATEST_SUMMARY_CACHE_KEY);
+
+  if (!cached || !Array.isArray(cached.rows)) return null;
+
+  return {
+    rows: cached.rows,
+    recordsTotal: cached.recordsTotal ?? cached.rows.length,
+  };
 }
 
 function toDateOnly(value: string): string {

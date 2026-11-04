@@ -3,9 +3,11 @@ import type {
   StockSummaryItem,
   StockSummaryPayload,
 } from "@/features/explore/types";
-
-const IDX_STOCK_SUMMARY_API =
-  "https://www.idx.id/primary/TradingSummary/GetStockSummary";
+import {
+  fetchIdxStockSummary,
+  getCachedLatestIdxStockSummary,
+  type IdxRow,
+} from "@/features/swing-screener/services/idx-fetch.service";
 
 import { formatWIB } from "@/lib/utils/date";
 
@@ -20,27 +22,13 @@ function toInteger(value: unknown) {
 }
 
 export async function fetchAndCacheStockSummary(): Promise<StockSummaryPayload> {
-  const url = `${IDX_STOCK_SUMMARY_API}?length=9999&start=0`;
-
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      Referer: "https://www.idx.id/",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    },
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error("Gagal fetch Stock Summary IDX");
-  }
-
-  const json = (await res.json()) as {
-    data?: Array<Record<string, unknown>>;
-    recordsTotal?: number;
+  const cachedIdx = await getCachedLatestIdxStockSummary();
+  const source = cachedIdx ?? {
+    rows: await fetchIdxStockSummary(),
+    recordsTotal: 0,
   };
 
-  const items: StockSummaryItem[] = (json.data ?? []).map((item) => {
+  const items: StockSummaryItem[] = source.rows.map((item: IdxRow) => {
     const previous = toNumber(item.Previous);
     const close = toNumber(item.Close);
     const changePct =
@@ -72,7 +60,7 @@ export async function fetchAndCacheStockSummary(): Promise<StockSummaryPayload> 
   const payload: StockSummaryPayload = {
     lastUpdate: new Date().toISOString(),
     lastUpdateFormatted: formatWIB(new Date()),
-    total: json.recordsTotal ?? items.length,
+    total: source.recordsTotal || items.length,
     items,
   };
 
